@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Orbit.Shared.Proto\Orbit.Shared.Proto.csproj"/>
+        <ProjectReference Include="..\Orbit.Shared\Orbit.Shared.csproj"/>
+        <ProjectReference Include="..\Orbit.Util\Orbit.Util.csproj"/>
+
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Grpc.AspNetCore" Version="2.49.0"/>
+        <PackageReference Include="log4net" Version="3.0.0-preview.2" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Log4Net.AspNetCore" Version="8.0.0" />
+        <PackageReference Include="Moq" Version="4.20.70"/>
+    </ItemGroup>
+
+
+</Project>

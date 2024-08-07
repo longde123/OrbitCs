@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option csharp_namespace = "Orbit.Shared.Proto";
+
+package Orbit.Shared;
+
+import "google/protobuf/timestamp.proto";
+
+message NodeIdProto {
+    string key = 1;
+    string namespace = 2;
+}
+
+message NodeInfoProto {
+    NodeIdProto id = 1;
+    CapabilitiesProto capabilities = 2;
+    repeated NodeIdProto visibleNodes = 3;
+    NodeLeaseProto lease = 4;
+    string url = 5;
+    NodeStatusProto status = 6;
+};
+
+message CapabilitiesProto {
+    repeated string addressableTypes = 1;
+}
+
+message NodeLeaseProto {
+    string challenge_token = 1;
+    google.protobuf.Timestamp renew_at = 2;
+    google.protobuf.Timestamp expires_at = 3;
+}
+
+enum NodeStatusProto {
+    STOPPED = 0;
+    STARTING = 1;
+    ACTIVE = 2;
+    DRAINING = 3;
+}

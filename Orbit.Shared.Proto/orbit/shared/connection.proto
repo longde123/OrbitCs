@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option csharp_namespace = "Orbit.Shared.Proto";
+
+package Orbit.Shared;
+
+import "orbit/shared/messages.proto";
+
+service Connection {
+    rpc OpenStream (stream MessageProto) returns (stream MessageProto);
+}

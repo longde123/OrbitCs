@@ -1,0 +1,20 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
+  &lt;Assembly Path="C:\Users\Admin\.nuget\packages\grpc.aspnetcore.server\2.63.0\lib\net7.0\Grpc.AspNetCore.Server.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Program Files\dotnet\packs\Microsoft.AspNetCore.App.Ref\7.0.11\ref\net7.0\Microsoft.AspNetCore.Server.Kestrel.Core.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.11\ref\net7.0\System.Collections.Concurrent.dll" /&gt;&#xD;
+&lt;/AssemblyExplorer&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=9003a528_002De847_002D46e8_002Dac69_002Dcf84f4c7e91d/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="ActorWithSuspendingMethodWithErrorThrowsException" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Or&gt;&#xD;
+    &lt;TestAncestor&gt;&#xD;
+      &lt;TestId&gt;NUnit3x::0E4F06DB-AA14-4915-A586-D59621E866A7::net7.0::Orbit.Client.Test.BasicActorTests.ActorWithSuspendingMethodWithErrorThrowsException&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;NUnit3x::0E4F06DB-AA14-4915-A586-D59621E866A7::net7.0::Orbit.Client.Test.LifecycleTests.ConnectingAClientAddsItToTheServerCluster&lt;/TestId&gt;&#xD;
+    &lt;/TestAncestor&gt;&#xD;
+    &lt;ProjectFile&gt;AD34B1E9-1C18-49F5-8885-DE53BD555195/d:Misc/f:HighResolutionTickerTest.cs&lt;/ProjectFile&gt;&#xD;
+  &lt;/Or&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
+	
+	
+	
+	
+	</wpf:ResourceDictionary>

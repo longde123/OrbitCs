@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+option csharp_namespace = "Orbit.Shared.Proto";
+
+package Orbit.Shared;
+
+import "orbit/shared/addressable.proto";
+import "orbit/shared/node.proto";
+
+message MessageProto {
+    int64 messageId = 1;
+    NodeIdProto source = 2;
+    MessageTargetProto target = 3;
+    MessageContentProto content = 4;
+    int64 attempts = 5;
+}
+
+message MessageTargetProto {
+    message Unicast {
+        NodeIdProto target = 1;
+    }
+
+    message RoutedUnicast {
+        repeated NodeIdProto target = 1;
+    }
+
+    oneof target {
+        Unicast unicastTarget = 1;
+        RoutedUnicast routedUnicastTarget = 2;
+    }
+}
+
+message MessageContentProto {
+    oneof content {
+        ErrorProto error = 1;
+        ConnectionInfoRequestProto info_request = 2;
+        ConnectionInfoResponseProto info_response = 3;
+        InvocationRequestProto invocation_request = 4;
+        InvocationResponseProto invocation_response = 5;
+        InvocationResponseErrorProto invocation_response_error = 6; 
+    }
+}
+ 
+ 
+
+message ConnectionInfoRequestProto {
+
+}
+
+message ConnectionInfoResponseProto {
+    NodeIdProto nodeId = 1;
+    
+}
+
+message InvocationRequestProto {
+    AddressableReferenceProto reference = 1;
+    string method = 2;
+    string arguments = 3;
+    InvocationReasonProto reason = 4;
+}
+
+enum InvocationReasonProto {
+    invocation = 0;
+    rerouted = 1;
+}
+
+message InvocationResponseProto {
+    string value = 1;
+}
+
+message InvocationResponseErrorProto {
+    string description = 1;
+    string platform = 2;
+}
+
+message ErrorProto {
+    string description = 1;
+}

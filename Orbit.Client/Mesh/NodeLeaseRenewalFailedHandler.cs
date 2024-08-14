@@ -20,12 +20,11 @@ public class RestartOnNodeRenewalFailure : INodeLeaseRenewalFailedHandler
 {
     private readonly ILogger _logger;
     private readonly OrbitClient _orbitClient;
-    private readonly SupervisorScope _supervisorScope;
 
     public RestartOnNodeRenewalFailure(OrbitClient orbitClient, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<RestartOnNodeRenewalFailure>();
-        this._orbitClient = orbitClient;
+        _orbitClient = orbitClient;
     }
 
     public void OnLeaseRenewalFailed()

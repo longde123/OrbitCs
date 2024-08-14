@@ -15,7 +15,7 @@ public class CustomFileLoggerProvider : ILoggerProvider
         _logFileWriter = path;
         Task.Run(() =>
         {
-            using (var sw = File.AppendText(_logFileWriter))
+            using (var logFileWriter = new StreamWriter(_logFileWriter, true))
             {
                 foreach (var message in _dataQueue.GetConsumingEnumerable())
                 {
@@ -23,7 +23,10 @@ public class CustomFileLoggerProvider : ILoggerProvider
 
                     // Append text to the file
 
-                    sw.WriteLine(message);
+
+                    //Write log messages to text file
+                    logFileWriter.WriteLine(message);
+                    logFileWriter.Flush();
                 }
             }
         }, _tokenSource.Token);
@@ -49,7 +52,7 @@ public class CustomFileLogger : ILogger
     public CustomFileLogger(string categoryName, BlockingCollection<string> dataQueue)
     {
         _categoryName = categoryName;
-        this._dataQueue = dataQueue;
+        _dataQueue = dataQueue;
     }
 
     public IDisposable BeginScope<TState>(TState state)
@@ -77,7 +80,7 @@ public class CustomFileLogger : ILogger
             return;
         }
 
-        var message = $"[{DateTime.Now.ToUniversalTime().ToString("ddThh:mm:ss.fffZ")}] {formatter(state, exception)}";
+        var message = $"[{DateTime.Now.ToUniversalTime().ToString()}] {_categoryName} ->{formatter(state, exception)}";
         _dataQueue.Add(message);
     }
 }

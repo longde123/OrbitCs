@@ -36,7 +36,7 @@ public class EtcdNodeDirectory : BaseAsyncMap<NodeId, NodeInfo>, INodeDirectory
         var channel = EtcdAddressableDirectoryConfig.CreateAuthenticatedChannel(config.Url);
         _kvClient = new KV.KVClient(channel);
         _leaseClient = new Lease.LeaseClient(channel);
-        this._clock = clock;
+        _clock = clock;
     }
 
     public async Task Tick()
@@ -85,14 +85,20 @@ public class EtcdNodeDirectory : BaseAsyncMap<NodeId, NodeInfo>, INodeDirectory
 
     public override async Task<bool> Remove(NodeId key)
     {
-        await _kvClient.DeleteRangeAsync(new DeleteRangeRequest { Key = ByteString.CopyFrom(ToByteKey(key)) });
+        await _kvClient.DeleteRangeAsync(new DeleteRangeRequest
+        {
+            Key = ByteString.CopyFrom(ToByteKey(key))
+        });
         return true;
     }
 
     public override async Task<bool> CompareAndSet(NodeId key, NodeInfo? initialValue, NodeInfo? newValue)
     {
         var byteKey = ToByteKey(key);
-        var entry = (await _kvClient.RangeAsync(new RangeRequest { Key = ByteString.CopyFrom(byteKey) })).Kvs
+        var entry = (await _kvClient.RangeAsync(new RangeRequest
+            {
+                Key = ByteString.CopyFrom(byteKey)
+            })).Kvs
             .FirstOrDefault();
         var oldValue = entry?.Value?.ToByteArray()?.Length > 0
             ? NodeInfoProto.Parser.ParseFrom(entry.Value.ToByteArray()).ToNodeInfo()
@@ -111,7 +117,10 @@ public class EtcdNodeDirectory : BaseAsyncMap<NodeId, NodeInfo>, INodeDirectory
             }
             else
             {
-                await _kvClient.DeleteRangeAsync(new DeleteRangeRequest { Key = ByteString.CopyFrom(byteKey) });
+                await _kvClient.DeleteRangeAsync(new DeleteRangeRequest
+                {
+                    Key = ByteString.CopyFrom(byteKey)
+                });
             }
 
             return true;

@@ -11,7 +11,7 @@ public class HealthService : Health.HealthBase
 
     public HealthService(HealthCheckList checks)
     {
-        this._checks = checks;
+        _checks = checks;
 
         Meters.Gauge(Meters.Names.PassingHealthChecks, () => _healthyChecks.Get());
     }
@@ -21,13 +21,16 @@ public class HealthService : Health.HealthBase
         var status = await IsHealthy()
             ? HealthCheckResponse.Types.ServingStatus.Serving
             : HealthCheckResponse.Types.ServingStatus.NotServing;
-        return new HealthCheckResponse { Status = status };
+        return new HealthCheckResponse
+        {
+            Status = status
+        };
     }
 
     public async Task<bool> IsHealthy()
     {
         var meter = Meters.Timer(Meters.Names.HealthCheck);
-        var checks = this._checks.GetChecks();
+        var checks = _checks.GetChecks();
         var healthyChecksCount = await meter.Record(async () =>
         {
             var checksCount = 0;

@@ -4,12 +4,10 @@ using Orbit.Client.Addressable;
 using Orbit.Client.Execution;
 using Orbit.Client.Mesh;
 using Orbit.Client.Net;
-using Orbit.Client.Stream;
 using Orbit.Client.Util;
 using Orbit.Shared.Mesh;
 using Orbit.Util.Concurrent;
 using Orbit.Util.Di;
-using Orbit.Util.Instrumentation;
 using Orbit.Util.Logger;
 using Orbit.Util.Misc;
 using Orbit.Util.Time;
@@ -29,24 +27,30 @@ public class OrbitClient
     private readonly MessageHandler _messageHandler;
     private readonly NodeLeaser _nodeLeaser;
     private readonly INodeLeaseRenewalFailedHandler _nodeLeaseRenewalFailedHandler;
-    private readonly SupervisorScope _scope;
     private readonly ConstantTicker _ticker;
-    private readonly SupervisorScope _tickerScope;
+    public ActorProxyFactory ActorFactory { get; }
+
+    public OrbitClientConfig Config { get; }
+
+    public ClientState Status => _localNode.Status.ClientState;
+
+    public NodeId? NodeId => _localNode.Status.NodeInfo?.Id;
 
     public OrbitClient(OrbitClientConfig config)
     {
         Config = config;
         _container = new ComponentContainer();
         _clock = config.Clock;
-        _scope = new SupervisorScope(OnUnhandledException);
-        _tickerScope = new SupervisorScope(OnUnhandledException);
+
         //Create an ILoggerFactory
         var loggerFactory = LoggerFactory.Create(builder =>
         {
-            var logFilePath = $"console_client_log_{DateTime.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss-fffffffZ")}.txt";
- 
+            if (!Directory.Exists("log"))
+                Directory.CreateDirectory("log");
+            var logFilePath = $"log/console_client_log_{DateTime.UtcNow.ToString("_yyyy_MM_ddTHH_mm_ss_fffZ")}.txt";
+
             builder.SetMinimumLevel(LogLevel.Trace); // 设置最低日志级别 
-                  //Add a custom log provider to write logs to text files
+            //Add a custom log provider to write logs to text files
             builder.AddProvider(new CustomFileLoggerProvider(logFilePath));
         });
         _logger = loggerFactory.CreateLogger<OrbitClient>();
@@ -55,7 +59,6 @@ public class OrbitClient
             containerRoot.Instance(loggerFactory);
             containerRoot.Instance(this);
             containerRoot.Instance(config);
-            containerRoot.Instance(_scope);
             containerRoot.Instance(_clock);
             containerRoot.Instance(new LocalNode(config));
 
@@ -95,21 +98,11 @@ public class OrbitClient
         _nodeLeaseRenewalFailedHandler = _container.Inject<INodeLeaseRenewalFailedHandler>().Value;
         ActorFactory = _container.Inject<ActorProxyFactory>().Value;
 
-        Status = _localNode.Status.ClientState;
-        NodeId = _localNode.Status.NodeInfo?.Id;
-
 
         _ticker = new ConstantTicker((long)config.TickRate.TotalMilliseconds, _clock, _logger, OnUnhandledException,
             false, Tick);
     }
-  
-    public ActorProxyFactory ActorFactory { get; }
 
-    public OrbitClientConfig Config { get; }
-
-    public ClientState Status { get; }
-
-    public NodeId NodeId { get; }
 
     public async Task Start()
     {
@@ -135,7 +128,11 @@ public class OrbitClient
 
             try
             {
-                await Retry.Do(() => _nodeLeaser.JoinCluster().Wait(), TimeSpan.FromSeconds(1), 60);
+                await RetryUtil.Retry(1, 5, async () =>
+                {
+                    await _nodeLeaser.JoinCluster();
+                    return 0;
+                });
             }
             catch (RetriesExceededException ex)
             {

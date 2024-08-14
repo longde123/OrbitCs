@@ -272,7 +272,10 @@ public class DefaultDirectedGraph<T>
 
         if (source.Equals(sink))
         {
-            graphPath = new List<T> { source };
+            graphPath = new List<T>
+            {
+                source
+            };
             return graphPath;
         }
 

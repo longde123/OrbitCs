@@ -108,7 +108,10 @@ public class BaseIntegrationTest
     {
         if (packages == null)
         {
-            packages = new List<string> { "Orbit.Client.Actor" };
+            packages = new List<string>
+            {
+                "Orbit.Client.Actor"
+            };
         }
 
         var ttl = addressableTtl ?? TimeSpan.FromMinutes(1);

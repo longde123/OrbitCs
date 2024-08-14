@@ -7,51 +7,49 @@ namespace Orbit.Server.Pipeline;
 public class PipelineContext
 {
     private readonly Pipeline _pipeline;
-    private readonly int _pipelineSize;
-    private readonly PipelineStep[] _pipelineSteps;
+    private readonly PipelineStepIn[] _pipelineStepIns;
+    private readonly PipelineStepOut[] _pipelineStepOuts;
     private MessageMetadata _metadata;
-    private int _pointer;
+
 
     public PipelineContext()
     {
     }
 
-    public PipelineContext(PipelineStep[] pipelineSteps, Pipeline pipeline, MessageMetadata metadata)
+    public PipelineContext(PipelineStepIn[] pipelineSteps, PipelineStepOut[] pipelineStepOuts, Pipeline pipeline, MessageMetadata metadata)
     {
-        this._pipelineSteps = pipelineSteps;
-        this._pipeline = pipeline;
-        this._metadata = metadata;
-
-        _pipelineSize = pipelineSteps.Length;
-        _pointer = metadata.MessageDirection == MessageDirection.Inbound ? _pipelineSize : -1;
+        _pipelineStepIns = pipelineSteps;
+        _pipelineStepOuts = pipelineStepOuts;
+        _pipeline = pipeline;
+        _metadata = metadata;
     }
 
     public MessageMetadata Metadata => _metadata;
 
-    public virtual async Task Next(Message msg)
+    public async Task Next(Message msg)
     {
         //todo
         // try
         // {
-        if (_metadata.MessageDirection == MessageDirection.Inbound)
+        // if (_metadata.MessageDirection == MessageDirection.Inbound)
         {
-            if (--_pointer < 0)
+            foreach (var pipelineStep in _pipelineStepIns)
             {
-                throw new Exception("Beginning of pipeline encountered.");
+                if (!await pipelineStep.OnInbound(this, msg))
+                {
+                    break;
+                }
             }
-
-            var pipelineStep = _pipelineSteps[_pointer];
-            await pipelineStep.OnInbound(this, msg);
         }
-        else if (_metadata.MessageDirection == MessageDirection.Outbound)
+        // else if (_metadata.MessageDirection == MessageDirection.Outbound)
         {
-            if (++_pointer >= _pipelineSize)
+            foreach (var pipelineStep in _pipelineStepOuts)
             {
-                throw new Exception("End of pipeline encountered.");
+                if (!await pipelineStep.OnOutbound(this, msg))
+                {
+                    break;
+                }
             }
-
-            var pipelineStep = _pipelineSteps[_pointer];
-            await pipelineStep.OnOutbound(this, msg);
         }
         // }
         // catch (PipelineException t)
@@ -64,8 +62,8 @@ public class PipelineContext
         // }
     }
 
-    public virtual void PushNew(Message msg, MessageMetadata newMeta = null)
+    public void PushNew(Message msg)
     {
-        _pipeline?.PushMessage(msg, newMeta);
+        //   _pipeline?.PushMessage(msg, null);
     }
 }

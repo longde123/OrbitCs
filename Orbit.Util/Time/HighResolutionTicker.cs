@@ -1,8 +1,6 @@
 namespace Orbit.Util.Time;
 // C# code translated from Kotlin
 
-
-
 public static class TickerUtils
 {
     public static async IAsyncEnumerable<TUnit> HighResolutionTicker<TUnit>(double ticksPerSecond,
@@ -17,16 +15,17 @@ public static class TickerUtils
         {
             // long nextDelay = (startTime + (rate * (++count))-time());  
             // await Task.Delay(TimeSpan.FromMicroseconds(nextDelay));  
-            yield return await  Task.Run(async () =>
+            yield return await Task.Run(async () =>
             {
-                var nextDelay = startTime + rate * ++count; 
+                var nextDelay = startTime + rate * ++count;
                 while (nextDelay > time())
-                { 
+                {
                     Thread.Sleep(0);
                     cancellationToken.ThrowIfCancellationRequested();
                 }
+
                 return default(TUnit);
-            },cancellationToken); 
+            }, cancellationToken);
         }
     }
 }

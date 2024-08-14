@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Orbit.Server.Auth;
-using Orbit.Server.Concurrent;
 using Orbit.Server.Mesh;
 using Orbit.Server.Net;
 using Orbit.Server.Pipeline;
@@ -26,8 +25,6 @@ public class OrbitServer : IHealthCheck
     private readonly INodeDirectory _nodeDirectory;
     private readonly Pipeline.Pipeline _pipeline;
     private readonly RemoteMeshNodeManager _remoteMeshNodeManager;
-    private readonly RuntimeScopes _runtimeScopes;
-
     private readonly AtomicReference<ShutdownLatch> _shutdownLatch;
 
     private readonly Meters.MeterCounter _slowTick;
@@ -36,19 +33,20 @@ public class OrbitServer : IHealthCheck
 
     public OrbitServer(OrbitServerConfig config)
     {
-        this._config = config;
+        _config = config;
         _shutdownLatch = new AtomicReference<ShutdownLatch>(new ShutdownLatch());
-        _runtimeScopes = new RuntimeScopes(OnUnhandledException);
         Container = new ComponentContainer();
         _clock = config.Clock;
 
         //Create an ILoggerFactory
         var loggerFactory = LoggerFactory.Create(builder =>
         {
-            var logFilePath = $"console_server_log_{DateTime.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss-fffffffZ")}.txt";
+            if (!Directory.Exists("log"))
+                Directory.CreateDirectory("log");
+            var logFilePath = $"log/console_server_log_{DateTime.UtcNow.ToString("_yyyy_MM_ddTHH_mm_ss_fffZ")}.txt";
 
             builder.SetMinimumLevel(LogLevel.Trace); // 设置最低日志级别
-           // builder.AddLog4Net(logFilePath);
+            // builder.AddLog4Net(logFilePath);
             //Add a custom log provider to write logs to text files
             builder.AddProvider(new CustomFileLoggerProvider(logFilePath));
         });
@@ -68,7 +66,6 @@ public class OrbitServer : IHealthCheck
             containerRoot.Instance(loggerFactory);
             containerRoot.Instance(this);
             containerRoot.Instance(config);
-            containerRoot.Instance(_runtimeScopes);
             containerRoot.Instance(_clock);
             containerRoot.Instance(config.ServerInfo);
 
@@ -87,14 +84,14 @@ public class OrbitServer : IHealthCheck
             // Pipeline
             containerRoot.Singleton<Pipeline.Pipeline>();
             containerRoot.Singleton<PipelineSteps>();
-            containerRoot.Singleton<BlankStep>();
-            containerRoot.Singleton<PlacementStep>();
-            containerRoot.Singleton<IdentityStep>();
-            containerRoot.Singleton<RoutingStep>();
-            containerRoot.Singleton<EchoStep>();
-            containerRoot.Singleton<VerifyStep>();
-            containerRoot.Singleton<AuthStep>();
-            containerRoot.Singleton<TransportStep>();
+            containerRoot.Singleton<BlankStepIn>();
+            containerRoot.Singleton<PlacementStepIn>();
+            containerRoot.Singleton<IdentityStepOut>();
+            containerRoot.Singleton<RoutingStepIn>();
+            containerRoot.Singleton<EchoStepIn>();
+            containerRoot.Singleton<VerifyStepIn>();
+            containerRoot.Singleton<AuthStepIn>();
+            containerRoot.Singleton<TransportStepOut>();
 
             // Mesh
             containerRoot.Singleton<LocalNodeInfo>();
@@ -222,15 +219,15 @@ public class OrbitServer : IHealthCheck
     public async Task Tick()
     {
         //todo
-        await _tickTimer.Record(async () =>
-        {
-            await _localNodeInfo.Tick();
-            await _clusterManager.Tick();
-            await _nodeDirectory.Tick();
-            await _addressableDirectory.Tick();
-            await _remoteMeshNodeManager.Tick();
-            return 1;
-        });
+        //   await _tickTimer.Record(async () =>
+        //{
+        await _localNodeInfo.Tick();
+        await _clusterManager.Tick();
+        await _nodeDirectory.Tick();
+        await _addressableDirectory.Tick();
+        await _remoteMeshNodeManager.Tick();
+        //  return 1;
+        // });
     }
 
 

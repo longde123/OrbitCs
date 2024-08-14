@@ -4,16 +4,16 @@ using Orbit.Shared.OrException;
 
 namespace Orbit.Server.Pipeline.Step;
 
-public class VerifyStep : PipelineStep
+public class VerifyStepIn : PipelineStepIn
 {
     private readonly ClusterManager _clusterManager;
 
-    public VerifyStep(ClusterManager clusterManager)
+    public VerifyStepIn(ClusterManager clusterManager)
     {
-        this._clusterManager = clusterManager;
+        _clusterManager = clusterManager;
     }
 
-    public override async Task OnInbound(PipelineContext context, Message msg)
+    public override async Task<bool> OnInbound(PipelineContext context, Message msg)
     {
         var source = msg.Source;
 
@@ -27,6 +27,6 @@ public class VerifyStep : PipelineStep
             throw new InvalidNodeId(source);
         }
 
-        await context.Next(msg);
+        return true;
     }
 }

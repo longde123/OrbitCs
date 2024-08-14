@@ -1,7 +1,6 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Orbit.Server.Auth;
-using Orbit.Server.Concurrent;
 using Orbit.Server.Mesh;
 using Orbit.Server.Net;
 using Orbit.Shared.Net;
@@ -18,16 +17,15 @@ public class Pipeline
 
     private readonly RailWorker<MessageContainer> _pipelineRails;
     private readonly PipelineSteps _pipelineSteps;
-    private readonly RuntimeScopes _runtimeScopes;
 
     public Pipeline(OrbitServerConfig config, PipelineSteps pipelineSteps,
         LocalNodeInfo localNodeInfo, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<Pipeline>();
 
-        this._config = config;
-        this._pipelineSteps = pipelineSteps;
-        this._localNodeInfo = localNodeInfo;
+        _config = config;
+        _pipelineSteps = pipelineSteps;
+        _localNodeInfo = localNodeInfo;
         _pipelineRails = new RailWorker<MessageContainer>(
             config.PipelineBufferCount,
             config.PipelineRailCount,
@@ -56,19 +54,19 @@ public class Pipeline
         await _pipelineRails.StopWorkers();
     }
 
-    public void PushMessage(Message msg, MessageMetadata meta = null)
+    public async Task PushMessage(Message msg, MessageMetadata? meta = null)
     {
-        if (!_pipelineRails.IsInitialized)
-        {
-            throw new InvalidOperationException(
-                "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit server?");
-        }
+        // if (!_pipelineRails.IsInitialized)
+        // {
+        //     throw new InvalidOperationException(
+        //         "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit server?");
+        // }
 
         var container = new MessageContainer(
             msg,
             meta ?? LocalMeta
         );
-
+        //await OnMessage(container);
         // logger.LogTrace("Writing message to pipeline channel: {0}  !", container);
         //todo
         // try
@@ -90,22 +88,23 @@ public class Pipeline
         // }
     }
 
-    private async Task LaunchRail(Channel<MessageContainer> receiveChannel)
-    {
-        await Task.Run(async () =>
-        {
-            await foreach (var msg in receiveChannel.Reader.ReadAllAsync())
-            {
-                _logger.LogTrace("Pipeline rail received message: {0}", msg);
-                await OnMessage(msg);
-            }
-        });
-    }
+    // private async Task LaunchRail(Channel<MessageContainer> receiveChannel)
+    // {
+    //     await Task.Run(async () =>
+    //     {
+    //         await foreach (var msg in receiveChannel.Reader.ReadAllAsync())
+    //         {
+    //             _logger.LogTrace("Pipeline rail received message: {0}", msg);
+    //             await OnMessage(msg);
+    //         }
+    //     });
+    // }
 
     private async Task OnMessage(MessageContainer container)
     {
         var context = new PipelineContext(
-            _pipelineSteps.Steps,
+            _pipelineSteps.StepIns,
+            _pipelineSteps.StepOuts,
             this,
             container.Metadata
         );

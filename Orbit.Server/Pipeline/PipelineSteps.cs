@@ -4,37 +4,41 @@ namespace Orbit.Server.Pipeline;
 
 public class PipelineSteps
 {
-    private readonly AuthStep _authStep;
-    private readonly IdentityStep _identityStep;
-    private readonly PlacementStep _placementStep;
-    private readonly RoutingStep _routingStep;
-    private readonly TransportStep _transportStep;
-    private readonly VerifyStep _verifyStep;
+    private readonly AuthStepIn _authStepIn;
+    private readonly PlacementStepIn _placementStepIn;
+    private readonly RoutingStepIn _routingStepIn;
+    private readonly VerifyStepIn _verifyStepIn;
+
+    private readonly IdentityStepOut _identityStepOut;
+    private readonly RoutingStepOut _routingStepOut;
+    private readonly TransportStepOut _transportStepOut;
 
     public PipelineSteps(
-        IdentityStep identityStep,
-        PlacementStep placementStep,
-        VerifyStep verifyStep,
-        RoutingStep routingStep,
-        AuthStep authStep,
-        TransportStep transportStep)
+        IdentityStepOut identityStepOut,
+        PlacementStepIn placementStepIn,
+        VerifyStepIn verifyStepIn,
+        RoutingStepIn routingStepIn,
+        RoutingStepOut routingStepOut,
+        AuthStepIn authStepIn,
+        TransportStepOut transportStepOut)
     {
-        this._identityStep = identityStep;
-        this._placementStep = placementStep;
-        this._verifyStep = verifyStep;
-        this._routingStep = routingStep;
-        this._authStep = authStep;
-        this._transportStep = transportStep;
+        _identityStepOut = identityStepOut;
+        _placementStepIn = placementStepIn;
+        _verifyStepIn = verifyStepIn;
+        _routingStepIn = routingStepIn;
+        _routingStepOut = routingStepOut;
+        _authStepIn = authStepIn;
+        _transportStepOut = transportStepOut;
     }
 
-    public PipelineStep[] Steps => new PipelineStep[]
+    public PipelineStepOut[] StepOuts => new PipelineStepOut[]
     {
-        _identityStep,
-        _routingStep,
-        // check cluster manager for node, pause if null and reintroduce to pipeline (log backoff)
-        _placementStep,
-        _verifyStep,
-        _authStep, 
-        _transportStep
+        _identityStepOut, _routingStepOut, _transportStepOut
+    };
+
+    public PipelineStepIn[] StepIns => new PipelineStepIn[]
+    {
+        _authStepIn, _verifyStepIn, _placementStepIn, _routingStepIn
+        // check cluster manager for node, pause if null and reintroduce to pipeline (log backoff) 
     };
 }

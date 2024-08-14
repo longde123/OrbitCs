@@ -27,6 +27,7 @@ public class Meters
         {
             _globalMeter.Dispose();
         }
+
         meter.Init();
         _globalMeter = new Meter(meter.GetName(), "1.0.0");
         _globalMeters = new Dictionary<string, AbstractMeter>();
@@ -130,8 +131,8 @@ public class Meters
 
         public MeterTimer(Counter<int> meter, Histogram<int> histogram)
         {
-            this._histogram = histogram;
-            this._meter = meter;
+            _histogram = histogram;
+            _meter = meter;
             _clock = new Clock();
         }
 
@@ -156,8 +157,8 @@ public class Meters
 
         public MeterSummary(Counter<int> meter, Histogram<int> histogram)
         {
-            this._histogram = histogram;
-            this._meter = meter;
+            _histogram = histogram;
+            _meter = meter;
             _clock = new Clock();
         }
 
@@ -198,7 +199,7 @@ public class Meters
         public MeterGauge(ObservableGauge<int> histogram, Func<int> func)
         {
             _value = histogram;
-            this._func = func;
+            _func = func;
         }
 
         public override int GetFirst()

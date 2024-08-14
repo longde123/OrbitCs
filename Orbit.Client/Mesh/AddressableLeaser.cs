@@ -21,6 +21,11 @@ public class AddressableLeaser
         };
 
         var response = await _addressableManagementStub.RenewLeaseAsync(request);
+        if (response.Status == RenewAddressableLeaseResponseProto.Types.Status.Error)
+        {
+            throw new Exception(response.ErrorDescription);
+        }
+
         return response?.Lease?.ToAddressableLease();
     }
 

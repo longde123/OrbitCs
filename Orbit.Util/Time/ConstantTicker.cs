@@ -12,7 +12,6 @@ public class ConstantTicker
     private readonly Func<Task> _onTick;
     private readonly long _targetTickRate;
 
-    private SupervisorScope _scope;
     private readonly CancellationTokenSource _tokenSource;
 
     public ConstantTicker(
@@ -45,7 +44,7 @@ public class ConstantTicker
         _logger?.LogTrace("Begin tick...");
         Task.Run(async () =>
         {
-            while (true)
+            while (!_tokenSource.IsCancellationRequested)
             {
                 var stopwatch = Stopwatch.Start(_clock);
 

@@ -43,7 +43,7 @@ public class RemoteMeshNodeConnection : IMessageSender
         Notify(_channel);
     }
 
-    public async Task SendMessage(Message message, Route? route=null)
+    public async Task SendMessage(Message message, Route? route = null)
     {
         _sendDataQueue.Add(message);
     }
@@ -61,7 +61,7 @@ public class RemoteMeshNodeConnection : IMessageSender
             {
                 try
                 {
-                    _sender.RequestStream.WriteAsync(message.ToMessageProto());
+                    await _sender.RequestStream.WriteAsync(message.ToMessageProto());
                 }
                 catch (Exception e)
                 {

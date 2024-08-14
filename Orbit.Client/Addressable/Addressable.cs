@@ -38,6 +38,22 @@ public class OnDeactivate : Attribute
 }
 
 /**
+ * Denotes a method OneWay.
+ */
+[AttributeUsage(AttributeTargets.Method)]
+public class OneWay : Attribute
+{
+}
+
+/**
+ * Denotes a method OneWay.
+ */
+[AttributeUsage(AttributeTargets.Method)]
+public class UnOneWay : Attribute
+{
+}
+
+/**
  * Denotes the reason an addressable is deactivating.
  */
 public enum DeactivationReason
@@ -53,11 +69,11 @@ public enum DeactivationReason
  */
 public abstract class AbstractAddressable
 {
- /**
-     * The Orbit context. It will be available after the Addressable is registered with Orbit.
-     * Attempting to access this variable before registration is undefined behavior.
-     */
- public AddressableContext Context { get; set; }
+    /**
+        * The Orbit context. It will be available after the Addressable is registered with Orbit.
+        * Attempting to access this variable before registration is undefined behavior.
+        */
+    public AddressableContext Context { get; set; }
 }
 
 /**

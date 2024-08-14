@@ -1,6 +1,5 @@
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Orbit.Server.Concurrent;
 using Orbit.Server.Mesh;
 using Orbit.Shared.Mesh;
 using Orbit.Shared.Proto;
@@ -11,12 +10,11 @@ public class NodeManagementService : NodeManagement.NodeManagementBase
 {
     private readonly ClusterManager _clusterManager;
     private readonly ILogger _logger;
-    private RuntimeScopes _runtimeScopes;
 
     public NodeManagementService(ClusterManager clusterManager, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<NodeManagementService>();
-        this._clusterManager = clusterManager;
+        _clusterManager = clusterManager;
     }
 
     public override async Task<NodeLeaseResponseProto> JoinCluster(JoinClusterRequestProto request,
@@ -28,7 +26,9 @@ public class NodeManagementService : NodeManagement.NodeManagementBase
             var capabilities = request.Capabilities.ToCapabilities();
             var info = await _clusterManager.JoinCluster(nameSpace, capabilities, null, NodeStatus.Active);
             _logger.LogDebug($"Joining cluster {info.Id}");
-            return info.ToNodeLeaseRequestResponseProto();
+            var toNodeLeaseRequestResponseProto = info.ToNodeLeaseRequestResponseProto();
+            // toNodeLeaseRequestResponseProto.Info.ToNodeInfo();
+            return toNodeLeaseRequestResponseProto;
         }
         catch (Exception t)
         {

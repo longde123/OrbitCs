@@ -11,7 +11,7 @@ public class Stopwatch
 
     public Stopwatch(Clock clock)
     {
-        this._clock = clock;
+        _clock = clock;
         _startTime = clock.CurrentTime;
     }
 

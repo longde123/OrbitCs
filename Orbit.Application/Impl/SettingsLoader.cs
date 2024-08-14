@@ -19,7 +19,10 @@ internal class SettingsLoader
             if (File.Exists(path))
             {
                 var fileContent = File.ReadAllText(path);
-                var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
+                var settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.All
+                };
                 var configuration = JsonConvert.DeserializeObject<OrbitServerConfig>(fileContent, settings);
                 return configuration;
             }

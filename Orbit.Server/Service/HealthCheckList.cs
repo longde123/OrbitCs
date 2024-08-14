@@ -12,10 +12,10 @@ public class HealthCheckList
     public HealthCheckList(OrbitServer server, LocalNodeInfo localNodeInfo,
         IAddressableDirectory addressableDirectory, INodeDirectory nodeDirectory)
     {
-        this._server = server;
-        this._localNodeInfo = localNodeInfo;
-        this._addressableDirectory = addressableDirectory;
-        this._nodeDirectory = nodeDirectory;
+        _server = server;
+        _localNodeInfo = localNodeInfo;
+        _addressableDirectory = addressableDirectory;
+        _nodeDirectory = nodeDirectory;
     }
 
     public List<IHealthCheck> GetChecks()

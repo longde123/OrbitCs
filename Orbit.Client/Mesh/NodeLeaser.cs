@@ -22,10 +22,10 @@ public class NodeLeaser
         ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<NodeLeaser>();
-        this._localNode = localNode;
-        this._grpcClient = grpcClient;
-        this._config = config;
-        this._clock = clock;
+        _localNode = localNode;
+        _grpcClient = grpcClient;
+        _config = config;
+        _clock = clock;
         _joinTimeout = config.JoinClusterTimeout;
         _leaveTimeout = config.LeaveClusterTimeout;
         _nodeManagementStub = new NodeManagement.NodeManagementClient(grpcClient.Channel);
@@ -36,10 +36,11 @@ public class NodeLeaser
         _logger.LogInformation(
             $"Joining namespace '{_localNode.Status.Namespace}' in the '{_localNode.Status.GrpcEndpoint}' cluster ...");
         var deadline = DateTime.Now.ToUniversalTime() + _joinTimeout;
-        var responseProto = await _nodeManagementStub.JoinClusterAsync(new JoinClusterRequestProto
+        var joinClusterRequestProto = new JoinClusterRequestProto
         {
             Capabilities = _localNode.Status.Capabilities?.ToCapabilitiesProto()
-        }, null, deadline);
+        };
+        var responseProto = await _nodeManagementStub.JoinClusterAsync(joinClusterRequestProto, null, deadline);
 
         if (responseProto.Status != NodeLeaseResponseProto.Types.Status.Ok)
         {

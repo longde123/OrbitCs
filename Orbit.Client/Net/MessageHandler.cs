@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Orbit.Client.Addressable;
+using Orbit.Client.Reactive;
 using Orbit.Client.Util;
+using Orbit.Shared.Addressable;
 using Orbit.Shared.Net;
 using Orbit.Util.Concurrent;
 using Orbit.Util.Time;
@@ -12,6 +14,7 @@ namespace Orbit.Client.Net;
 public class MessageHandler
 {
     private readonly ConcurrentDictionary<long, ResponseEntry> _awaitingResponse;
+    private readonly ConcurrentDictionary<long, Completion> _awaitingSubject;
     private readonly Clock _clock;
     private readonly OrbitClientConfig _config;
     private readonly ConnectionHandler _connectionHandler;
@@ -20,6 +23,8 @@ public class MessageHandler
     private readonly ILogger _logger;
     private readonly AtomicReference<long> _messageCounter;
 
+    public AtomicReference<long> MessageCounter => _messageCounter;
+
     public MessageHandler(Clock clock,
         OrbitClientConfig config,
         ConnectionHandler connectionHandler,
@@ -27,11 +32,12 @@ public class MessageHandler
         ILoggerFactory loggerFactory)
     {
         _awaitingResponse = new ConcurrentDictionary<long, ResponseEntry>();
+        _awaitingSubject = new ConcurrentDictionary<long, Completion>();
         _messageCounter = new AtomicReference<long>(0);
-        this._clock = clock;
-        this._config = config;
-        this._connectionHandler = connectionHandler;
-        this._invocationSystem = invocationSystem;
+        _clock = clock;
+        _config = config;
+        _connectionHandler = connectionHandler;
+        _invocationSystem = invocationSystem;
         _logger = loggerFactory.CreateLogger<MessageHandler>();
     }
 
@@ -41,10 +47,11 @@ public class MessageHandler
     {
         switch (message.Content)
         {
-            
+            //s->c  
             case MessageContent.Error:
             case MessageContent.InvocationResponse:
             case MessageContent.InvocationResponseError:
+            {
                 var messageId = message.MessageId.Value;
                 var completion = GetCompletion(messageId);
 
@@ -57,6 +64,7 @@ public class MessageHandler
                                                                         ((MessageContent.Error)message.Content)
                                                                         .Description));
                             break;
+
                         case MessageContent.InvocationResponseError:
                             _invocationSystem.OnInvocationPlatformErrorResponse(
                                 (MessageContent.InvocationResponseError)message.Content, completion);
@@ -68,15 +76,34 @@ public class MessageHandler
                             break;
                     }
                 }
+            }
+
 
                 break;
-            case MessageContent.InvocationRequest:
-
+            case MessageContent.InvocationRequest content:
+//c->s
                 _logger.LogDebug($"InvocationRequest {message.Destination} -> {message.MessageId} ");
-                await _invocationSystem.OnInvocationRequest(message);
+
+                if (content.Reason == InvocationReason.Invocation)
+                {
+                    await _invocationSystem.OnInvocationRequest(message);
+                }
+
+                if (content.Reason == InvocationReason.Subscribe)
+                {
+                    await _invocationSystem.OnReactiveSubscribeRequest(message);
+                }
+
+                if (content.Reason == InvocationReason.UnSubscribe)
+                {
+                    await _invocationSystem.OnReactiveUnSubscribeRequest(message);
+                }
+
                 break;
         }
     }
+
+
     public void SendMessage(Message msg, Completion completion)
     {
         var messageId = msg.MessageId ?? _messageCounter.AtomicSet(c => c + 1);
@@ -102,12 +129,13 @@ public class MessageHandler
 
         _connectionHandler.Send(newMsg);
     }
-    public void SendMessage(Message msg )
+
+    public void SendMessage(Message msg)
     {
         var messageId = msg.MessageId ?? _messageCounter.AtomicSet(c => c + 1);
         msg.MessageId = messageId;
         //todo 
-        var newMsg = msg; 
+        var newMsg = msg;
 
         _connectionHandler.Send(newMsg);
     }
@@ -115,30 +143,37 @@ public class MessageHandler
     public void Tick()
     {
         _logger.LogWarning("Tick");
-        foreach (var entry in _awaitingResponse.Values)
-        {
-            if (entry.TimeAdded < _clock.CurrentTime - MessageTimeoutMs)
-            {
-                _awaitingResponse.Remove(entry.MessageId, out _);
-                var content =
-                    $"MessageId {entry.MessageId} Response timed out after {_clock.CurrentTime - entry.TimeAdded} ms, timeout is {MessageTimeoutMs}ms. " +
-                    entry.Msg;
-                _logger.LogWarning(content);
-                entry.Completion.SetException(new TimeoutException(content));
-            }
-        }
+        // foreach (var entry in _awaitingResponse.Values)
+        // {
+        //  
+        //     if (entry.TimeAdded < _clock.CurrentTime - MessageTimeoutMs)
+        //     {
+        //         _awaitingResponse.Remove(entry.MessageId, out _);
+        //         var content =
+        //             $"MessageId {entry.MessageId} Response timed out after {_clock.CurrentTime - entry.TimeAdded} ms, timeout is {MessageTimeoutMs}ms. " +
+        //             entry.Msg;
+        //         _logger.LogWarning(content);
+        //         entry.Completion.SetException(new TimeoutException(content));
+        //     }
+        // }
     }
 
-    private Completion? GetCompletion(long messageId)
+
+    public Completion? GetCompletion(long messageId)
     {
-        if (_awaitingResponse.ContainsKey(messageId))
+        if (_awaitingResponse.TryGetValue(messageId, out var c))
         {
-            _awaitingResponse.Remove(messageId, out var c);
+            _awaitingResponse.Remove(messageId, out _);
             return c.Completion;
         }
 
+        if (_awaitingSubject.TryGetValue(messageId, out var cc))
+        {
+            return cc;
+        }
+
         _logger.LogWarning("Response for unknown message " + messageId + " received. Did it time out? (> " +
-                          MessageTimeoutMs + "ms).");
+                           MessageTimeoutMs + "ms).");
         throw new Exception("Response for unknown message " + messageId + " received. Did it time out? (> " +
                             MessageTimeoutMs + "ms).");
     }
@@ -149,5 +184,15 @@ public class MessageHandler
         public long MessageId;
         public Message Msg;
         public TimeMs TimeAdded;
+    }
+
+    public void UnSubscribe(long key)
+    {
+        _awaitingSubject.Remove(key, out _);
+    }
+
+    public void Subscribe(long key, Completion c)
+    {
+        _awaitingSubject.TryAdd(key, c);
     }
 }

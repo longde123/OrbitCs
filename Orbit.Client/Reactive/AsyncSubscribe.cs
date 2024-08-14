@@ -1,4 +1,4 @@
-namespace Orbit.Client.Stream;
+namespace Orbit.Client.Reactive;
 
 public class AsyncSubscribe<T> : IAsyncObserver<T>
 {

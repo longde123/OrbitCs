@@ -25,10 +25,10 @@ public class ClientConnection : IMessageSender
     public ClientConnection(AuthInfo authInfo, IAsyncStreamReader<MessageProto> incomingChannel,
         IServerStreamWriter<MessageProto> outgoingChannel, Pipeline.Pipeline pipeline, ILoggerFactory loggerFactory)
     {
-        this._authInfo = authInfo;
-        this._incomingChannel = incomingChannel;
-        this._outgoingChannel = outgoingChannel;
-        this._pipeline = pipeline;
+        _authInfo = authInfo;
+        _incomingChannel = incomingChannel;
+        _outgoingChannel = outgoingChannel;
+        _pipeline = pipeline;
         _logger = loggerFactory.CreateLogger<ClientConnection>();
         _sendDataQueue = new BlockingCollection<Message>();
         _tokenSource = new CancellationTokenSource();
@@ -51,7 +51,7 @@ public class ClientConnection : IMessageSender
 
     public NodeId NodeId => _authInfo.NodeId;
 
-    public async Task SendMessage(Message message, Route? route= null)
+    public async Task SendMessage(Message message, Route? route = null)
     {
         _logger.LogInformation($"SendMessage {message.Destination}->{message.MessageId} !");
         _sendDataQueue.Add(message);
@@ -81,7 +81,7 @@ public class ClientConnection : IMessageSender
             //todo
             // try  
             // {
-            _pipeline.PushMessage(message, meta);
+            await _pipeline.PushMessage(message, meta);
             // }
             // catch (Exception t)
             // {

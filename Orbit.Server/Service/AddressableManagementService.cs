@@ -1,5 +1,4 @@
 using Grpc.Core;
-using Orbit.Server.Concurrent;
 using Orbit.Server.Mesh;
 using Orbit.Shared.Mesh;
 using Orbit.Shared.Proto;
@@ -13,11 +12,11 @@ public class AddressableManagementService : AddressableManagement.AddressableMan
     private readonly Meters.MeterTimer _addressableLeaseRenewalTimer;
     private readonly AddressableManager _addressableManager;
 
-    public AddressableManagementService(AddressableManager addressableManager, RuntimeScopes runtimeScopes)
+    public AddressableManagementService(AddressableManager addressableManager)
     {
         //todo
         //runtimeScopes.IoScope.CoroutineContext
-        this._addressableManager = addressableManager;
+        _addressableManager = addressableManager;
         _addressableLeaseRenewalTimer = Meters.Timer(Meters.Names.AddressableLeaseRenewalTimer);
         _addressableLeaseAbandonTimer = Meters.Timer(Meters.Names.AddressableLeaseAbandonTimer);
     }
@@ -25,46 +24,45 @@ public class AddressableManagementService : AddressableManagement.AddressableMan
     public override async Task<RenewAddressableLeaseResponseProto> RenewLease(RenewAddressableLeaseRequestProto request,
         ServerCallContext context)
     {
-        return await _addressableLeaseRenewalTimer.Record(async () =>
+        // return await _addressableLeaseRenewalTimer.Record(async () =>
+        {
+            try
             {
-                //     try
-                //     {
                 var nodeId = (NodeId)context.UserState[ServerAuthInterceptor.NodeId];
                 var it = await _addressableManager.RenewLease(request.Reference.ToAddressableReference(), nodeId);
                 return it.ToAddressableLeaseResponseProto();
-
-                //     }
-                //     catch (Exception t)
-                //     {
-                //         return t.ToAddressableLeaseResponseProto();
-                //     }
             }
-        );
+            catch (Exception t)
+            {
+                return t.ToAddressableLeaseResponseProto();
+            }
+        }
+        // );
     }
 
     public override async Task<AbandonAddressableLeaseResponseProto> AbandonLease(
         AbandonAddressableLeaseRequestProto request, ServerCallContext context)
     {
-        return await _addressableLeaseAbandonTimer.Record(async () =>
-            {
-                var nodeId = (NodeId)context.UserState[ServerAuthInterceptor.NodeId];
-                var reference = request.Reference.ToAddressableReference();
-                var result = false;
-                //todo
-                // try
-                // {
-                result = await _addressableManager.AbandonLease(reference, nodeId);
-                // }
-                // catch (Exception t)
-                // {
-                //     // Handle exception
-                // }
+        //  return await _addressableLeaseAbandonTimer.Record(async () =>
+        {
+            var nodeId = (NodeId)context.UserState[ServerAuthInterceptor.NodeId];
+            var reference = request.Reference.ToAddressableReference();
+            var result = false;
 
-                return new AbandonAddressableLeaseResponseProto
-                {
-                    Abandoned = result
-                };
+            try
+            {
+                result = await _addressableManager.AbandonLease(reference, nodeId);
             }
-        );
+            catch (Exception t)
+            {
+                throw t;
+            }
+
+            return new AbandonAddressableLeaseResponseProto
+            {
+                Abandoned = result
+            };
+        }
+        //  );
     }
 }

@@ -14,7 +14,7 @@ public class LocalAddressableDirectory : HashMapBackedAsyncMap<NamespacedAddress
 
     public LocalAddressableDirectory(Clock clock)
     {
-        this._clock = clock;
+        _clock = clock;
     }
 
     public override ConcurrentDictionary<NamespacedAddressableReference, AddressableLease> Map => GlobalMap;
@@ -27,10 +27,11 @@ public class LocalAddressableDirectory : HashMapBackedAsyncMap<NamespacedAddress
     public async Task Tick()
     {
         // Cull expired
+        var now = _clock.Now();
         var toDelete = GlobalMap.Values.Where(value => _clock.InPast(value.ExpiresAt.ToDateTime())).ToList();
         foreach (var item in toDelete)
         {
-            Remove(new NamespacedAddressableReference(item.NodeId.Namespace, item.Reference));
+            await Remove(new NamespacedAddressableReference(item.NodeId.Namespace, item.Reference));
         }
     }
 

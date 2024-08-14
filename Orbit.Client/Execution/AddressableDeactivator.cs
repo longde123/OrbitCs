@@ -20,11 +20,11 @@ public abstract class AddressableDeactivator
         var tickerAsyncEnumerator = ticker.GetAsyncEnumerator();
         try
         {
-            await Task.WhenAll(addressables.Select(async a =>
+            foreach (var a in addressables)
             {
                 await tickerAsyncEnumerator.MoveNextAsync();
                 await deactivate(a);
-            }));
+            }
         }
         finally
         {
@@ -38,12 +38,12 @@ public abstract class AddressableDeactivator
 
         public Concurrent(Config config)
         {
-            this._config = config;
+            _config = config;
         }
 
         public override async Task Deactivate(List<IDeactivatable> addressables, Deactivator deactivate)
         {
-            DeactivateItems(addressables, _config.ConcurrentDeactivations, long.MaxValue, deactivate);
+            await DeactivateItems(addressables, _config.ConcurrentDeactivations, long.MaxValue, deactivate);
         }
 
         public class Config : ExternallyConfigured<AddressableDeactivator>
@@ -64,12 +64,12 @@ public abstract class AddressableDeactivator
 
         public RateLimited(Config config)
         {
-            this._config = config;
+            _config = config;
         }
 
         public override async Task Deactivate(List<IDeactivatable> addressables, Deactivator deactivate)
         {
-            DeactivateItems(addressables, int.MaxValue, _config.DeactivationsPerSecond, deactivate);
+            await DeactivateItems(addressables, int.MaxValue, _config.DeactivationsPerSecond, deactivate);
         }
 
         public class Config : ExternallyConfigured<AddressableDeactivator>
@@ -91,14 +91,14 @@ public abstract class AddressableDeactivator
 
         public TimeSpan(Config config)
         {
-            this._config = config;
+            _config = config;
         }
 
         public override async Task Deactivate(List<IDeactivatable> addressables, Deactivator deactivate)
         {
             var deactivationsPerSecond = (int)(addressables.Count * 1000 / _config.DeactivationTimeMilliseconds);
 
-            DeactivateItems(addressables, int.MaxValue, deactivationsPerSecond, deactivate);
+            await DeactivateItems(addressables, int.MaxValue, deactivationsPerSecond, deactivate);
         }
 
         public class Config : ExternallyConfigured<AddressableDeactivator>
@@ -118,7 +118,7 @@ public abstract class AddressableDeactivator
     {
         public override async Task Deactivate(List<IDeactivatable> addressables, Deactivator deactivate)
         {
-            DeactivateItems(addressables, int.MaxValue, long.MaxValue, deactivate);
+            await DeactivateItems(addressables, int.MaxValue, long.MaxValue, deactivate);
         }
 
         public class Config : ExternallyConfigured<AddressableDeactivator>

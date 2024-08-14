@@ -22,12 +22,12 @@ public class GrpcEndpoint
         ConnectionService connectionService, LocalServerInfo localServerInfo, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<GrpcEndpoint>();
-        this._serverAuthInterceptor = serverAuthInterceptor;
-        this._healthService = healthService;
-        this._nodeManagementService = nodeManagementService;
-        this._addressableManagementService = addressableManagementService;
-        this._connectionService = connectionService;
-        this._localServerInfo = localServerInfo;
+        _serverAuthInterceptor = serverAuthInterceptor;
+        _healthService = healthService;
+        _nodeManagementService = nodeManagementService;
+        _addressableManagementService = addressableManagementService;
+        _connectionService = connectionService;
+        _localServerInfo = localServerInfo;
     }
 
 

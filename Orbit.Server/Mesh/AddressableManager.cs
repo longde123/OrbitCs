@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Orbit.Server.Service;
 using Orbit.Shared.Addressable;
 using Orbit.Shared.Mesh;
@@ -14,13 +15,16 @@ public class AddressableManager
     private readonly ClusterManager _clusterManager;
     private readonly LeaseDuration _leaseExpiration;
     private readonly Meters.MeterTimer _placementTimer;
+    private readonly ILogger _logger;
 
     public AddressableManager(IAddressableDirectory addressableDirectory, ClusterManager clusterManager, Clock clock,
-        OrbitServerConfig config)
+        OrbitServerConfig config,
+        ILoggerFactory loggerFactory)
     {
-        this._addressableDirectory = addressableDirectory;
-        this._clusterManager = clusterManager;
-        this._clock = clock;
+        _logger = loggerFactory.CreateLogger<AddressableManager>();
+        _addressableDirectory = addressableDirectory;
+        _clusterManager = clusterManager;
+        _clock = clock;
         _leaseExpiration = config.AddressableLeaseDuration;
 
         _placementTimer = Meters.Timer(Meters.Names.PlacementTimer);
@@ -38,6 +42,7 @@ public class AddressableManager
         //ineligibleNodes 无资格的；不合格的
         var key = new NamespacedAddressableReference(nameSpace, addressableReference);
 
+        _logger.LogInformation($"LocateOrPlace {key}");
         var it = await _addressableDirectory.GetOrPut(key, () => CreateNewEntry(key, ineligibleNodes));
 
 
@@ -45,14 +50,20 @@ public class AddressableManager
         var expired = _clock.InPast(it.ExpiresAt.ToDateTime());
         if (expired || invalidNode)
         {
-            var newEntry = await CreateNewEntry(key, ineligibleNodes.Concat(new List<NodeId> { it.NodeId }).ToList());
+            var newEntry = await CreateNewEntry(key, ineligibleNodes.Concat(new List<NodeId>
+            {
+                it.NodeId
+            }).ToList());
             if (await _addressableDirectory.CompareAndSet(key, it, newEntry))
             {
                 return newEntry.NodeId;
             }
 
             return await LocateOrPlace(nameSpace, addressableReference,
-                ineligibleNodes.Concat(new List<NodeId> { it.NodeId }).ToList());
+                ineligibleNodes.Concat(new List<NodeId>
+                {
+                    it.NodeId
+                }).ToList());
         }
 
         return it.NodeId;
@@ -67,11 +78,14 @@ public class AddressableManager
             if (initialValue == null || !initialValue.NodeId.Equals(nodeId) ||
                 _clock.InPast(initialValue.ExpiresAt.ToDateTime()))
             {
-                throw new PlacementFailedException($"Could not renew lease for {addressableReference}");
+                var err = $"Could not renew lease for [{addressableReference}] Now [{_clock.Now()}] ExpiresAt [{initialValue?.ExpiresAt.ToDateTime()}]";
+
+                throw new PlacementFailedException(err);
             }
 
-            initialValue.ExpiresAt = _clock.Now().Add(_leaseExpiration.ExpiresIn).ToTimestamp();
-            initialValue.RenewAt = _clock.Now().Add(_leaseExpiration.RenewIn).ToTimestamp();
+            var now = _clock.Now();
+            initialValue.ExpiresAt = now.Add(_leaseExpiration.ExpiresIn).ToTimestamp();
+            initialValue.RenewAt = now.Add(_leaseExpiration.RenewIn).ToTimestamp();
 
             return initialValue;
         });
@@ -95,18 +109,20 @@ public class AddressableManager
         List<NodeId> invalidNodes)
     {
         var nodeId = await Place(reference, invalidNodes);
-        return new AddressableLease
+        var now = _clock.Now();
+        var addressableLease = new AddressableLease
         {
             NodeId = nodeId,
             Reference = reference.AddressableReference,
-            ExpiresAt = _clock.Now().Add(_leaseExpiration.ExpiresIn).ToTimestamp(),
-            RenewAt = _clock.Now().Add(_leaseExpiration.RenewIn).ToTimestamp()
+            ExpiresAt = now.Add(_leaseExpiration.ExpiresIn).ToTimestamp(),
+            RenewAt = now.Add(_leaseExpiration.RenewIn).ToTimestamp()
         };
+        return addressableLease;
     }
 
     private async Task<NodeId> Place(NamespacedAddressableReference reference, List<NodeId> invalidNodes)
     {
-        var v = await _placementTimer.Record(async () =>
+        //   var v = await _placementTimer.Record(async () =>
         {
             var it = await AttemptUtil.Attempt(
                 5,
@@ -135,8 +151,8 @@ public class AddressableManager
                 }
             );
             return it;
-        });
-
-        return v;
+        }
+        //); 
+        //return v;
     }
 }

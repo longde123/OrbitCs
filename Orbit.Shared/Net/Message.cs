@@ -18,8 +18,9 @@ public class Message
         {
             var it = Content switch
             {
-                MessageContent.InvocationRequest request => "[InvocationRequest] " + request.Destination.Key,
+                MessageContent.InvocationRequest request => "[InvocationRequest] " + request.Destination,
                 MessageContent.InvocationResponse response => "[InvocationResponse] " + Target ?? "",
+
                 _ => ""
             };
             return it;
@@ -30,7 +31,10 @@ public class Message
 public enum InvocationReason
 {
     Invocation = 0,
-    Rerouted = 1
+
+    Rerouted = 1,
+    Subscribe = 2,
+    UnSubscribe = 3
 }
 
 public static class InvocationReasonExtensions
@@ -45,11 +49,11 @@ public abstract class MessageTarget
 {
     public class BroadUnicast : MessageTarget
     {
-        public BroadUnicast( )
-        { 
+        public BroadUnicast()
+        {
         }
- 
     }
+
     public class Unicast : MessageTarget
     {
         public Unicast(NodeId targetNode)
@@ -101,8 +105,7 @@ public abstract class MessageContent
 
         public string Description { get; set; }
     }
-    
-     
+
 
     public class ConnectionInfoRequest : MessageContent
     {

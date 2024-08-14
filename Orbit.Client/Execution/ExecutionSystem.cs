@@ -32,16 +32,16 @@ public class ExecutionSystem
         AddressableDeactivator defaultDeactivator, LocalNode localNode, OrbitClientConfig config,
         ILoggerFactory loggerFactory)
     {
-        this._loggerFactory = loggerFactory;
+        _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<ExecutionSystem>();
-        this._executionLeases = executionLeases;
-        this._definitionDirectory = definitionDirectory;
-        this._componentContainer = componentContainer;
-        this._clock = clock;
-        this._addressableConstructor = addressableConstructor;
-        this._defaultDeactivator = defaultDeactivator;
-        this._localNode = localNode;
-        this._config = config;
+        _executionLeases = executionLeases;
+        _definitionDirectory = definitionDirectory;
+        _componentContainer = componentContainer;
+        _clock = clock;
+        _addressableConstructor = addressableConstructor;
+        _defaultDeactivator = defaultDeactivator;
+        _localNode = localNode;
+        _config = config;
 
         _deactivationTimeoutMs = (long)config.DeactivationTimeout.TotalMilliseconds;
         _defaultTtl = (long)config.AddressableTtl.TotalMilliseconds;
@@ -53,8 +53,15 @@ public class ExecutionSystem
     {
         try
         {
+            _logger.LogWarning("invocation " + invocation.Method);
             await _executionLeases.GetOrRenewLease(invocation.Reference);
-            _activeAddressables.TryGetValue(invocation.Reference, out var handle);
+            _logger.LogWarning("GetOrRenewLease invocation " + invocation.Method);
+
+            if (!_activeAddressables.TryGetValue(invocation.Reference, out var handle))
+            {
+            }
+
+
             if (ClientState == ClientState.Stopping && (handle == null || !handle.Active))
             {
                 completion.SetException(
@@ -64,7 +71,11 @@ public class ExecutionSystem
 
             if (handle == null)
             {
-                handle = await Activate(invocation.Reference);
+                //todo
+                _logger.LogWarning("handle == null " + invocation.Method);
+                handle = Activate(invocation.Reference);
+                await handle.Activate();
+                _logger.LogWarning("handle2 == null " + invocation.Method);
             }
 
             if (handle == null)
@@ -114,47 +125,38 @@ public class ExecutionSystem
             });
 
         var expired = active.Where(handle =>
-            _clock.InPast(_executionLeases.GetLease(handle.Value.Reference).RenewAt.ToDateTime()));
+            _clock.InPast(_executionLeases.GetLease(handle.Value.Reference).RenewAt.ToDateTime())).ToList();
 
         if (deactivate.Any() || expired.Any())
         {
             _logger.LogDebug($"Execution system tick: {expired} expired, {deactivate.Count()} deactivating.");
         }
 
-        foreach (var handle in _activeAddressables)
+        foreach (var handle in deactivate)
         {
-            if (handle.Value.DeactivateNextTick)
-            {
-                Deactivate(handle.Value, DeactivationReason.ExternallyTriggered);
-                continue;
-            }
+            await Deactivate(handle.Value, DeactivationReason.ExternallyTriggered);
+        }
 
-            if (_clock.CurrentTime - handle.Value.LastActivity > _defaultTtl)
-            {
-                Deactivate(handle.Value, DeactivationReason.TtlExpired);
-                continue;
-            }
-
+        foreach (var handle in expired)
+        {
             var lease = _executionLeases.GetLease(handle.Key);
             if (lease != null)
             {
-                if (_clock.InPast(lease.RenewAt.ToDateTime()))
+                try
                 {
-                    try
-                    {
-                        await _executionLeases.RenewLease(handle.Key);
-                    }
-                    catch (Exception t)
-                    {
-                        _logger.LogError($"Unexpected error renewing lease {t}");
-                        Deactivate(handle.Value, DeactivationReason.LeaseRenewalFailed);
-                    }
+                    _logger.LogInformation($"RenewLease  [{handle.Key}] Now [{_clock.Now()}]  ExpiresAt [{lease.ExpiresAt}]");
+                    await _executionLeases.RenewLease(handle.Key);
+                }
+                catch (Exception t)
+                {
+                    _logger.LogError($"Unexpected error renewing lease {t.Message}");
+                    await Deactivate(handle.Value, DeactivationReason.LeaseRenewalFailed);
                 }
             }
             else
             {
                 _logger.LogError("No lease found for ${handle.Value.Reference}");
-                Deactivate(handle.Value, DeactivationReason.LeaseRenewalFailed);
+                await Deactivate(handle.Value, DeactivationReason.LeaseRenewalFailed);
             }
         }
 
@@ -172,8 +174,9 @@ public class ExecutionSystem
 
             var deactivatorToUse = deactivator ?? _defaultDeactivator;
             Deactivator deactivate = async a => { await Deactivate(a, DeactivationReason.NodeShuttingDown); };
-            await deactivatorToUse.Deactivate(_activeAddressables.Values.Select(v => (IDeactivatable)v).ToList(),
-                deactivate);
+
+            var addressables = _activeAddressables.Values.Select(v => (IDeactivatable)v).ToList();
+            await deactivatorToUse.Deactivate(addressables, deactivate);
 
             while (_activeAddressables.Count > 0)
             {
@@ -181,14 +184,17 @@ public class ExecutionSystem
         }
     }
 
-    private async Task<ExecutionHandle> Activate(AddressableReference reference)
+
+    private ExecutionHandle Activate(AddressableReference reference)
     {
         try
         {
-            var implDefinition = _definitionDirectory.GetImplDefinition(reference.Type);
-            var handle = GetOrCreateAddressable(reference, implDefinition);
-            await handle.Activate();
-            return handle;
+            //lock (_activeAddressables)
+            {
+                var implDefinition = _definitionDirectory.GetImplDefinition(reference.Type);
+                var handle = GetOrCreateAddressable(reference, implDefinition);
+                return handle;
+            }
         }
         catch (InvalidOperationException e)
         {
@@ -198,14 +204,18 @@ public class ExecutionSystem
 
     private async Task Deactivate(IDeactivatable deactivatable, DeactivationReason deactivationReason)
     {
-        try
+        var deactivatableTask = deactivatable.Deactivate(deactivationReason);
+        var delayTask = Task.Delay((int)_deactivationTimeoutMs);
+        var resultTask = await Task.WhenAny(deactivatableTask, delayTask);
+        //.WithCancellation(cancellationTokenSource.Token);
+
+        if (resultTask == delayTask)
         {
-            await Task.Delay((int)_deactivationTimeoutMs);
-            await deactivatable.Deactivate(deactivationReason);
-        }
-        catch (TimeoutException e)
-        {
-            _logger.LogError(e.ToString());
+            _logger.LogError(
+                $"A timeout occurred (> {_deactivationTimeoutMs} ms) during deactivation of " +
+                $"{deactivatable.Reference}. This addressable is now considered deactivated, this may cause state " +
+                "corruption."
+            );
         }
 
         await _executionLeases.AbandonLease(deactivatable.Reference);
@@ -215,20 +225,22 @@ public class ExecutionSystem
     private ExecutionHandle GetOrCreateAddressable(AddressableReference reference,
         AddressableImplDefinition implDefinition)
     {
-        return _activeAddressables.GetOrAdd(reference, _ =>
+        var ad = _activeAddressables.GetOrAdd(reference, _ =>
         {
             var newInstance = CreateInstance(implDefinition.ImplClass);
             return CreateHandle(reference, implDefinition, newInstance);
         });
+        _logger.LogDebug("" + _activeAddressables.Count);
+        return ad;
     }
 
     private ExecutionHandle CreateHandle(AddressableReference reference, AddressableImplDefinition implDefinition,
-        Addressable.IAddressable instance)
+        IAddressable instance)
     {
         return new ExecutionHandle(instance, reference, implDefinition, _componentContainer, _loggerFactory);
     }
 
-    private Addressable.IAddressable CreateInstance(AddressableClass addressableClass)
+    private IAddressable CreateInstance(AddressableClass addressableClass)
     {
         return _addressableConstructor.ConstructAddressable(addressableClass);
     }

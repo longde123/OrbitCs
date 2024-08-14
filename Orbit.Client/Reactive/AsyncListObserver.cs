@@ -1,14 +1,14 @@
 using System.Collections.Immutable;
 
-namespace Orbit.Client.Stream;
+namespace Orbit.Client.Reactive;
 
 public class AsyncListObserver<T> : IAsyncObserver<T>
 {
-    private readonly ImmutableList<IAsyncObserver<T>> _observers;
+    private readonly List<IAsyncObserver<T>> _observers;
 
-    public AsyncListObserver(ImmutableList<IAsyncObserver<T>> observers)
+    public AsyncListObserver()
     {
-        _observers = observers;
+        _observers = new List<IAsyncObserver<T>>();
     }
 
 

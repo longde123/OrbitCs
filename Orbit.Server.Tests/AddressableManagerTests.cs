@@ -22,7 +22,10 @@ public class AddressableManagerTests
     {
         var custer = await _clusterManager.JoinCluster(
             nameSpace,
-            new NodeCapabilities(new HashSet<string> { addressableType }),
+            new NodeCapabilities(new HashSet<string>
+            {
+                addressableType
+            }),
             null,
             NodeStatus.Active);
 
@@ -45,8 +48,12 @@ public class AddressableManagerTests
         var address = new AddressableReference("testActor", new Key.StringKey("a"));
         var nodes = new Dictionary<int, NodeInfo>
         {
-            { 1, await Join() },
-            { 2, await Join("test2") }
+            {
+                1, await Join()
+            },
+            {
+                2, await Join("test2")
+            }
         };
 
         foreach (var _ in Enumerable.Range(0, 100))
@@ -62,8 +69,12 @@ public class AddressableManagerTests
         var address = new AddressableReference("testActor", new Key.StringKey("a"));
         var nodes = new Dictionary<int, NodeInfo>
         {
-            { 1, await Join(addressableType: "testActor") },
-            { 2, await Join(addressableType: "invalidActor") }
+            {
+                1, await Join(addressableType: "testActor")
+            },
+            {
+                2, await Join(addressableType: "invalidActor")
+            }
         };
 
         foreach (var _ in Enumerable.Range(0, 100))
@@ -79,8 +90,12 @@ public class AddressableManagerTests
         var address = new AddressableReference("testActor", new Key.StringKey("a"));
         var nodes = new Dictionary<int, NodeInfo>
         {
-            { 1, await Join() },
-            { 2, await Join() }
+            {
+                1, await Join()
+            },
+            {
+                2, await Join()
+            }
         };
 
         await _nodeDirectory.Remove(nodes[1].Id);
@@ -99,8 +114,12 @@ public class AddressableManagerTests
         var address = new AddressableReference("testActor", new Key.StringKey("a"));
         var nodes = new Dictionary<int, NodeInfo>
         {
-            { 1, await Join() },
-            { 2, await Join() }
+            {
+                1, await Join()
+            },
+            {
+                2, await Join()
+            }
         };
 
         await _clusterManager.UpdateNode(nodes[1].Id, node =>
@@ -122,8 +141,12 @@ public class AddressableManagerTests
         var address = new AddressableReference("testActor", new Key.StringKey("a"));
         var nodes = new Dictionary<int, NodeInfo>
         {
-            { 1, await Join() },
-            { 2, await Join() }
+            {
+                1, await Join()
+            },
+            {
+                2, await Join()
+            }
         };
 
         await _clusterManager.UpdateNode(nodes[1].Id, node =>
@@ -145,15 +168,25 @@ public class AddressableManagerTests
         var address = new AddressableReference("testActor", new Key.StringKey("a"));
         var nodes = new Dictionary<int, NodeInfo>
         {
-            { 1, await Join() },
-            { 2, await Join() },
-            { 3, await Join() }
+            {
+                1, await Join()
+            },
+            {
+                2, await Join()
+            },
+            {
+                3, await Join()
+            }
         };
 
         foreach (var _ in Enumerable.Range(0, 100))
         {
             var placedNode = await _addressableManager
-                .LocateOrPlace("test", address, new List<NodeId> { nodes[2].Id, nodes[3].Id });
+                .LocateOrPlace("test", address, new List<NodeId>
+                {
+                    nodes[2].Id,
+                    nodes[3].Id
+                });
             Assert.AreEqual(nodes[1].Id, placedNode);
         }
     }
@@ -224,6 +257,6 @@ public class AddressableManagerTests
             _addressableDirectory,
             _clusterManager,
             Clock,
-            config);
+            config, loggerFactory);
     }
 }

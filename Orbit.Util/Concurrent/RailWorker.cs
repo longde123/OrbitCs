@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Logging;
 
@@ -5,7 +6,7 @@ namespace Orbit.Util.Concurrent;
 
 public class RailWorker<T>
 {
-    private readonly BufferBlock<T> _channel;
+    private readonly BlockingCollection<T> _channel;
     private readonly ILogger _logger;
     private readonly List<Task> _workers;
     private bool _autoStart = false;
@@ -17,27 +18,15 @@ public class RailWorker<T>
         Func<T, Task> onMessage = null)
     {
         _tokenSource = new CancellationTokenSource();
-        _channel = new BufferBlock<T>(new DataflowBlockOptions { BoundedCapacity = buffer });
+        _channel = new BlockingCollection<T>();
         _logger = logger;
         _workers = new List<Task>(); //[railCount];
-        this._railCount = railCount;
+        _railCount = railCount;
         _onMessage = onMessage;
         if (autoStart)
         {
             StartWorkers();
         }
-    }
-
-    public bool IsInitialized => _workers != null && _channel != null;
-
-    public async Task Send(T msg)
-    {
-        if (_channel == null)
-        {
-            throw new InvalidOperationException("Rail worker is not initialized.");
-        }
-
-        await _channel.SendAsync(msg);
     }
 
     public bool Offer(T msg)
@@ -47,7 +36,7 @@ public class RailWorker<T>
             throw new InvalidOperationException("Rail worker is not initialized.");
         }
 
-        _channel.SendAsync(msg);
+        _channel.Add(msg);
         return true;
     }
 
@@ -57,13 +46,9 @@ public class RailWorker<T>
         {
             var task = Task.Run(async () =>
             {
-                while (await _channel.OutputAvailableAsync())
+                foreach (var msg in _channel.GetConsumingEnumerable())
                 {
-                    //todo
-                    // try
-                    // {
-                    var msg = await _channel.ReceiveAsync();
-                    await _onMessage(msg);
+                    _onMessage(msg);
                     // }
                     // catch (Exception e)
                     // {
@@ -81,7 +66,7 @@ public class RailWorker<T>
     {
         _tokenSource.Cancel();
         _workers.Clear();
-        _channel.Complete();
+        _channel.CompleteAdding();
         // await Task.WhenAll(_workers);
     }
 }

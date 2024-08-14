@@ -1,9 +1,18 @@
 using Orbit.Client.Addressable;
 using Orbit.Client.Net;
+using Orbit.Client.Reactive;
 using Orbit.Shared.Addressable;
 using Orbit.Shared.Mesh;
 
 namespace Orbit.Client.Actor;
+
+public interface ITestActorSubject : IActorSubject<string>
+{
+}
+
+public class TestActorSubject : AbstractActorSubject<string>, ITestActorSubject
+{
+}
 
 public static class TrackingGlobals
 {

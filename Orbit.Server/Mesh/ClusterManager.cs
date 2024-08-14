@@ -23,9 +23,9 @@ public class ClusterManager
         ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<ClusterManager>();
-        this._config = config;
-        this._clock = clock;
-        this._nodeDirectory = nodeDirectory;
+        _config = config;
+        _clock = clock;
+        _nodeDirectory = nodeDirectory;
         _leaseExpiration = config.NodeLeaseDuration;
         _clusterNodes = new ConcurrentDictionary<NodeId, NodeInfo>();
         _nodeGraph =
@@ -41,7 +41,7 @@ public class ClusterManager
 
     public async Task Tick()
     {
-        var allNodes = await _nodeDirectory.Entries();
+        var allNodes = (await _nodeDirectory.Entries()).ToList();
         _clusterNodes.Clear();
         foreach (var node in allNodes)
         {
@@ -55,12 +55,12 @@ public class ClusterManager
         NodeStatus nodeStatus = NodeStatus.Stopped, NodeId? nodeId = null)
     {
         var newNodeId = nodeId ?? NodeId.Generate(nameSpace);
-
+        var now = _clock.Now();
         var lease = new NodeLease
         {
             ChallengeToken = RngUtils.RandomString(64),
-            ExpiresAt = _clock.Now().Add(_leaseExpiration.ExpiresIn).ToTimestamp(),
-            RenewAt = _clock.Now().Add(_leaseExpiration.RenewIn).ToTimestamp()
+            ExpiresAt = now.Add(_leaseExpiration.ExpiresIn).ToTimestamp(),
+            RenewAt = now.Add(_leaseExpiration.RenewIn).ToTimestamp()
         };
 
         var info = new NodeInfo

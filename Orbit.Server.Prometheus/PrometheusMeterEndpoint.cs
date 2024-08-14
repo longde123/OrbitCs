@@ -11,16 +11,17 @@ public class PrometheusMeterEndpoint
         using var meterProvider = Sdk.CreateMeterProviderBuilder()
             .AddMeter(meterName)
             .AddPrometheusHttpListener(options => options.UriPrefixes = new[]
-                { $"http://localhost:{port}{endpoint}/" })
+            {
+                $"http://localhost:{port}{endpoint}/"
+            })
             .Build();
-        
-        ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+
+        var loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder 
+            builder
                 .AddSimpleConsole();
         });
         var logger = loggerFactory.CreateLogger<PrometheusMeterEndpoint>();
         logger.LogInformation($"PrometheusMeter http://localhost:{port}{endpoint}/");
-        
     }
 }

@@ -27,7 +27,10 @@ public static class NodeExtensions
         return new NodeInfoProto
         {
             Id = nodeInfo.Id.ToNodeIdProto(),
-            VisibleNodes = { nodeInfo.VisibleNodes.Select(node => node.ToNodeIdProto()).ToList() },
+            VisibleNodes =
+            {
+                nodeInfo.VisibleNodes.Select(node => node.ToNodeIdProto()).ToList()
+            },
             Lease = nodeInfo.Lease.ToNodeLeaseProto(),
             Capabilities = nodeInfo.Capabilities.ToCapabilitiesProto(),
             Status = nodeInfo.NodeStatus.ToNodeStatusProto(),
@@ -72,7 +75,10 @@ public static class NodeExtensions
     {
         return new CapabilitiesProto
         {
-            AddressableTypes = { nodeCapabilities.AddressableTypes }
+            AddressableTypes =
+            {
+                nodeCapabilities.AddressableTypes
+            }
         };
     }
 

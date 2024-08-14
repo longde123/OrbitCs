@@ -19,9 +19,9 @@ public class LocalNodeInfo : IHealthCheck
         ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<LocalNodeInfo>();
-        this._clusterManager = clusterManager;
-        this._clock = clock;
-        this._serverInfo = serverInfo;
+        _clusterManager = clusterManager;
+        _clock = clock;
+        _serverInfo = serverInfo;
     }
 
 

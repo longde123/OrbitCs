@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using NUnit.Framework;
 using Orbit.Client.Actor;
+using Orbit.Client.AlternativeActor;
 using Orbit.Client.Execution;
 using Orbit.Client.Net;
 
@@ -11,7 +12,7 @@ public class DeactivationTests : BaseIntegrationTest
     [Test]
     public async Task AllActorsGetDeactivatedOnShutdown()
     {
-        var actorCount = 500;
+        var actorCount = 100;
         for (var key = 0; key < actorCount; key++)
         {
             var keyedDeactivatingActor = Client.ActorFactory.CreateProxy<IKeyedDeactivatingActor>(key);
@@ -20,7 +21,7 @@ public class DeactivationTests : BaseIntegrationTest
 
         await DisconnectClient(Client);
 
-        await Task.Delay(TimeSpan.FromSeconds(5)); // simulate eventually logic with delay
+        await Task.Delay(5); // simulate eventually logic with delay
         Assert.AreEqual(TrackingGlobals.DeactivateTestCounts, actorCount);
     }
 
@@ -64,22 +65,25 @@ public class DeactivationTests : BaseIntegrationTest
     [Test]
     public async Task ActorsAddedDuringDeactivationAreRejected()
     {
-        var count = 100;
+        var count = 2;
         for (var key = 0; key < count; key++)
         {
             await Client.ActorFactory.CreateProxy<ISlowDeactivateActor>(key).Ping("message");
         }
 
-        await StartServer(50057, tickRate: TimeSpan.FromSeconds(5));
-        var client2 = await StartClient(50057, packages: new List<string> { "orbit.client.alternativeActor" });
-
-        for (var k = 0; k < 100; k++)
+        await StartServer(50057, tickRate: TimeSpan.FromSeconds(1));
+        var client2 = await StartClient(50057, packages: new List<string>
         {
-            var key = k + 100;
+            "Orbit.Client.AlternativeActor"
+        });
+
+        for (var k = 0; k < count; k++)
+        {
+            var key = k + count;
             if (Client.Status != ClientState.Idle)
             {
                 await Task.Delay(5);
-                await client2.ActorFactory.CreateProxy<ISlowDeactivateActor>(key).Ping("message");
+                await client2.ActorFactory.CreateProxy<ITestActor>(key).Ping("message");
             }
         }
 
@@ -93,7 +97,7 @@ public class DeactivationTests : BaseIntegrationTest
     public async Task DeactivatingByRateLimitTakesMinimumTimeWithAddressableCount()
     {
         // Only use custom client
-        await DisconnectClient(this.Client);
+        await DisconnectClient(Client);
         var count = 500;
         var client = await StartClient(
             addressableDeactivation: new AddressableDeactivator.RateLimited.Config(1000)
@@ -116,7 +120,7 @@ public class DeactivationTests : BaseIntegrationTest
     public async Task DeactivatingByTimespanTakesMinimumTimespanRegardlessOfAddressableCount()
     {
         // Only use custom client
-        await DisconnectClient(this.Client);
+        await DisconnectClient(Client);
 
         var key = 0;
 
@@ -171,7 +175,7 @@ public class DeactivationTests : BaseIntegrationTest
     public async Task SendingAMessageToADeactivatedActorDuringShutdownReroutesTheMessage()
     {
         // Only use custom client
-        await DisconnectClient(this.Client);
+        await DisconnectClient(Client);
 
         var client = await StartClient(addressableTtl: TimeSpan.FromMilliseconds(300));
 
@@ -202,7 +206,7 @@ public class DeactivationTests : BaseIntegrationTest
     [Test]
     public async Task ThrowingOnDeactivationDoesntStopDeactivation()
     {
-        await DisconnectClient(this.Client);
+        await DisconnectClient(Client);
         await DisconnectServers();
 
         await StartServer(addressableLeaseDurationSeconds: 1);

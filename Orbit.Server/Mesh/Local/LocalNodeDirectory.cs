@@ -13,7 +13,7 @@ public class LocalNodeDirectory : HashMapBackedAsyncMap<NodeId, NodeInfo>, INode
 
     public LocalNodeDirectory(Clock clock)
     {
-        this._clock = clock;
+        _clock = clock;
     }
 
     public override ConcurrentDictionary<NodeId, NodeInfo> Map => GlobalMap;

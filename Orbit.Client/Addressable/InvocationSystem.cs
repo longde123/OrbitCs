@@ -1,11 +1,13 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Orbit.Client.Execution;
 using Orbit.Client.Net;
-using Orbit.Client.Stream;
+using Orbit.Client.Reactive;
 using Orbit.Client.Util;
 using Orbit.Shared.Addressable;
 using Orbit.Shared.Net;
 using Orbit.Shared.OrException;
+using Orbit.Util.Concurrent;
 using Orbit.Util.Di;
 using AddressableType = System.String;
 using AddressableInvocationArgument = System.Tuple<object, System.Type>;
@@ -13,30 +15,35 @@ using AddressableInvocationArguments = System.Collections.Generic.List<System.Tu
 
 namespace Orbit.Client.Addressable;
 
-public class InvocationSystem
+public partial class InvocationSystem
 {
     private readonly OrbitClientConfig _config;
-    private readonly ExecutionSystem _executionSystem; 
+    private readonly ExecutionSystem _executionSystem;
     private readonly LocalNode _localNode;
     private readonly ILogger _logger;
     private readonly Lazy<MessageHandler> _messageHandler;
     private readonly Serializer.Serializer _serializer;
 
 
+    private readonly ConcurrentDictionary<long, object> _awaitingSubscribe;
+
     public InvocationSystem(Serializer.Serializer serializer, ExecutionSystem executionSystem, LocalNode localNode,
         OrbitClientConfig config, ComponentContainer componentContainer, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<InvocationSystem>();
-        this._serializer = serializer;
-        this._executionSystem = executionSystem;
-        this._localNode = localNode;
-        this._config = config;
+        _serializer = serializer;
+        _executionSystem = executionSystem;
+        _localNode = localNode;
+        _config = config;
         _messageHandler = componentContainer.Inject<MessageHandler>();
+        _awaitingSubscription = new ConcurrentDictionary<long, object>(); //server remove
+        _awaitingSubscribe = new ConcurrentDictionary<long, object>(); //client add
     }
 
     public async Task OnInvocationRequest(Message msg)
     {
         var content = msg.Content as MessageContent.InvocationRequest;
+
         var arguments = _serializer.Deserialize<AddressableInvocationArguments>(content.Arguments);
         var invocation = new AddressableInvocation
         {
@@ -51,9 +58,15 @@ public class InvocationSystem
             var completion = new Completion();
             await _executionSystem.HandleInvocation(invocation, completion);
             var result = await completion.Task;
-
-            var resultSerialize = _serializer.Serialize(result);
-            response = new MessageContent.InvocationResponse(resultSerialize);
+            if (null == result)
+            {
+                response = new MessageContent.InvocationResponse("null");
+            }
+            else
+            {
+                var resultSerialize = _serializer.Serialize(result);
+                response = new MessageContent.InvocationResponse(resultSerialize);
+            }
         }
         catch (Exception t)
         {
@@ -72,7 +85,7 @@ public class InvocationSystem
             MessageId = msg.MessageId,
             Target = new MessageTarget.Unicast(msg.Source),
             Content = response
-        }, new Completion());
+        });
         _logger.LogDebug($"SendInvocationResponse {msg.Destination} -> {msg.MessageId} ");
     }
 
@@ -91,6 +104,7 @@ public class InvocationSystem
         completion.TrySetException(result);
     }
 
+
     public void SendInvocation(AddressableInvocation invocation, Completion completion)
     {
         if (_localNode.Status.ClientState != ClientState.Connected)
@@ -107,6 +121,4 @@ public class InvocationSystem
         _messageHandler.Value.SendMessage(msg, completion);
         _logger.LogDebug($"SendInvocationRequest {msg.Destination} -> {msg.MessageId} ");
     }
-
-     
 }

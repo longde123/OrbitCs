@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Orbit.Server.Auth;
-using Orbit.Server.Concurrent;
 using Orbit.Server.Mesh;
 using Orbit.Server.Service;
 using Orbit.Shared.Mesh;
@@ -22,17 +21,15 @@ public class ConnectionManager
     private readonly ILogger _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly Lazy<Pipeline.Pipeline> _pipeline;
-    private readonly RuntimeScopes _runtimeScopes;
 
-    public ConnectionManager(RuntimeScopes runtimeScopes, ClusterManager clusterManager, LocalNodeInfo localNodeInfo,
+    public ConnectionManager(ClusterManager clusterManager, LocalNodeInfo localNodeInfo,
         AuthSystem authSystem, ComponentContainer container, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<ConnectionManager>();
-        this._loggerFactory = loggerFactory;
-        this._runtimeScopes = runtimeScopes;
-        this._clusterManager = clusterManager;
-        this._localNodeInfo = localNodeInfo;
-        this._authSystem = authSystem;
+        _loggerFactory = loggerFactory;
+        _clusterManager = clusterManager;
+        _localNodeInfo = localNodeInfo;
+        _authSystem = authSystem;
         _connectedClients = new ConcurrentDictionary<NodeId, ClientConnection>();
         _pipeline = container.Inject<Pipeline.Pipeline>();
         Meters.Gauge(Meters.Names.ConnectedClients, () =>
@@ -42,10 +39,12 @@ public class ConnectionManager
             return _connectedClients.Count;
         });
     }
+
     public List<ClientConnection> GetAllConnections()
     {
         return _connectedClients.Values.ToList();
     }
+
     public ClientConnection? GetClient(NodeId nodeId)
     {
         if (_connectedClients.TryGetValue(nodeId, out var client))
@@ -74,7 +73,7 @@ public class ConnectionManager
 
         var clientConnection =
             new ClientConnection(authInfo, incomingChannel, outgoingChannel, _pipeline.Value, _loggerFactory);
-        _connectedClients[nodeId] = clientConnection;
+        _connectedClients.TryAdd(nodeId, clientConnection);
 
         await _clusterManager.UpdateNode(nodeInfo.Id, it =>
         {

@@ -46,6 +46,11 @@ public class AddressableReference : IEquatable<AddressableReference>
             return hash;
         }
     }
+
+    public override string ToString()
+    {
+        return Key.ToString();
+    }
 }
 
 public class NamespacedAddressableReference : IEquatable<NamespacedAddressableReference>
@@ -88,6 +93,11 @@ public class NamespacedAddressableReference : IEquatable<NamespacedAddressableRe
             hash = hash * 23 + AddressableReference.GetHashCode();
             return hash;
         }
+    }
+
+    public override string ToString()
+    {
+        return Namespace + AddressableReference;
     }
 }
 

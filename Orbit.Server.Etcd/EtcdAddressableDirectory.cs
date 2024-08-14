@@ -28,7 +28,7 @@ public class EtcdAddressableDirectory : BaseAsyncMap<NamespacedAddressableRefere
     public EtcdAddressableDirectory(EtcdAddressableDirectoryConfig config, Clock clock, LoggerFactory loggerFactory)
     {
         _config = config;
-        this._clock = clock;
+        _clock = clock;
         _logger = loggerFactory.CreateLogger<EtcdAddressableDirectory>();
         _channel = EtcdAddressableDirectoryConfig.CreateAuthenticatedChannel(config.Url);
         _kvClient = new KV.KVClient(_channel);
@@ -101,7 +101,10 @@ public class EtcdAddressableDirectory : BaseAsyncMap<NamespacedAddressableRefere
 
     public override async Task<bool> Remove(NamespacedAddressableReference key)
     {
-        await _kvClient.DeleteRangeAsync(new DeleteRangeRequest { Key = ByteString.CopyFrom(ToByteKey(key)) });
+        await _kvClient.DeleteRangeAsync(new DeleteRangeRequest
+        {
+            Key = ByteString.CopyFrom(ToByteKey(key))
+        });
         return true;
     }
 
@@ -109,7 +112,10 @@ public class EtcdAddressableDirectory : BaseAsyncMap<NamespacedAddressableRefere
         AddressableLease? newValue)
     {
         var byteKey = ToByteKey(key);
-        var entry = (await _kvClient.RangeAsync(new RangeRequest { Key = ByteString.CopyFrom(byteKey) })).Kvs
+        var entry = (await _kvClient.RangeAsync(new RangeRequest
+            {
+                Key = ByteString.CopyFrom(byteKey)
+            })).Kvs
             .FirstOrDefault();
         var oldValue = entry?.Value?.ToByteArray()?.Length > 0
             ? AddressableLeaseProto.Parser.ParseFrom(entry.Value.ToByteArray()).ToAddressableLease()
@@ -128,7 +134,10 @@ public class EtcdAddressableDirectory : BaseAsyncMap<NamespacedAddressableRefere
             }
             else
             {
-                await _kvClient.DeleteRangeAsync(new DeleteRangeRequest { Key = ByteString.CopyFrom(byteKey) });
+                await _kvClient.DeleteRangeAsync(new DeleteRangeRequest
+                {
+                    Key = ByteString.CopyFrom(byteKey)
+                });
             }
 
             return true;

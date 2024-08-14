@@ -16,9 +16,9 @@ public class RemoteMeshNodeManager
 
     public RemoteMeshNodeManager(LocalNodeInfo localNode, ClusterManager clusterManager, ILoggerFactory loggerFactory)
     {
-        this._localNode = localNode;
-        this._clusterManager = clusterManager;
-        this._loggerFactory = loggerFactory;
+        _localNode = localNode;
+        _clusterManager = clusterManager;
+        _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<RemoteMeshNodeManager>();
         _connections = new ConcurrentDictionary<NodeId, RemoteMeshNodeConnection>();
 
@@ -33,10 +33,12 @@ public class RemoteMeshNodeManager
     {
         await RefreshConnections();
     }
+
     public List<RemoteMeshNodeConnection> GetAllConnections()
     {
         return _connections.Values.ToList();
     }
+
     public RemoteMeshNodeConnection? GetNode(NodeId nodeId)
     {
         _connections.TryGetValue(nodeId, out var connection);

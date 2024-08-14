@@ -13,8 +13,8 @@ public class ExecutionLeases
 
     public ExecutionLeases(AddressableLeaser addressableLeaser, Clock clock)
     {
-        this._addressableLeaser = addressableLeaser;
-        this._clock = clock;
+        _addressableLeaser = addressableLeaser;
+        _clock = clock;
     }
 
     public AddressableLease? GetLease(AddressableReference addressableReference)

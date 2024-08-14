@@ -10,7 +10,7 @@ public class HashMapBackedAsyncMap<TK, TV> : BaseAsyncMap<TK, TV> where TV : cla
     {
         if (Map.TryGetValue(key, out var value))
         {
-            return await Task.FromResult(value);
+            return value;
         }
 
         return null;
@@ -30,16 +30,15 @@ public class HashMapBackedAsyncMap<TK, TV> : BaseAsyncMap<TK, TV> where TV : cla
 
     public override async Task<bool> CompareAndSet(TK key, TV? initialValue, TV? newValue)
     {
-        if (Map.TryGetValue(key, out var oldValue))
+        if (initialValue == null)
         {
-            if (initialValue != oldValue)
-            {
-                return false;
-                //  throw new Exception("Could not map nitialValue!=oldValue");
-            }
+            Map.TryAdd(key, newValue);
+        }
+        else
+        {
+            Map.TryUpdate(key, newValue, initialValue);
         }
 
-        Map[key] = newValue;
         return true;
     }
 }

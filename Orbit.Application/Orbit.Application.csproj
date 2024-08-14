@@ -9,7 +9,7 @@
 
 
     <ItemGroup>
-        <ProjectReference Include="..\Orbit.Server.Prometheus\Orbit.Server.Prometheus.csproj" />
+        <ProjectReference Include="..\Orbit.Server.Prometheus\Orbit.Server.Prometheus.csproj"/>
         <ProjectReference Include="..\Orbit.Server\Orbit.Server.csproj"/>
     </ItemGroup>
 

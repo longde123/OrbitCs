@@ -2,9 +2,9 @@ using Orbit.Shared.Net;
 
 namespace Orbit.Server.Pipeline.Step;
 
-public class AuthStep : PipelineStep
+public class AuthStepIn : PipelineStepIn
 {
-    public override async Task OnInbound(PipelineContext context, Message msg)
+    public override async Task<bool> OnInbound(PipelineContext context, Message msg)
     {
         var newSource = msg.Source != null && context.Metadata.AuthInfo.IsManagementNode
             ? msg.Source
@@ -12,7 +12,6 @@ public class AuthStep : PipelineStep
         //todo
         msg.Source = newSource;
         var newMsg = msg;
-
-        await context.Next(newMsg);
+        return true;
     }
 }

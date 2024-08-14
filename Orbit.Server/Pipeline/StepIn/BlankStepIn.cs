@@ -1,6 +1,6 @@
 namespace Orbit.Server.Pipeline.Step;
 
-public class BlankStep : PipelineStep
+public class BlankStepIn : PipelineStepIn
 {
     // class implementation
 }

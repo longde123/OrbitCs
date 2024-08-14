@@ -1,7 +1,10 @@
+using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
+using Orbit.Client.Actor;
 using Orbit.Client.Addressable;
 using Orbit.Client.Net;
+using Orbit.Client.Reactive;
 using Orbit.Client.Util;
 using Orbit.Shared.Addressable;
 using Orbit.Shared.Net;
@@ -15,43 +18,43 @@ namespace Orbit.Client.Execution;
 public class ExecutionHandle : IDeactivatable
 {
     private readonly int _addressableBufferCount = 128;
-    private readonly Channel<EventType> _channel;
+    private readonly BlockingCollection<EventType> _channel;
     private readonly Lazy<Clock> _clock;
     private readonly ComponentContainer _componentContainer;
 
     private readonly long _createdTime;
     private readonly AddressableImplDefinition _implDefinition;
-    private readonly Addressable.IAddressable _instance;
+    private readonly IAddressable _instance;
     private readonly Lazy<InvocationSystem> _invocationSystem;
     private readonly AtomicReference<long> _lastActivityAtomic;
 
     private readonly ILogger _logger;
 
     private readonly Lazy<OrbitClient> _orbitClient;
-    private readonly Lazy<SupervisorScope> _supervisorScope;
     private readonly CancellationTokenSource _tokenSource;
+
+
     private volatile bool _deactivateNextTick = false;
 
-    public ExecutionHandle(Addressable.IAddressable instance, AddressableReference reference,
+    public ExecutionHandle(IAddressable instance, AddressableReference reference,
         AddressableImplDefinition implDefinition, ComponentContainer componentContainer, ILoggerFactory loggerFactory
     )
     {
         _logger = loggerFactory.CreateLogger<ExecutionHandle>();
-        this._instance = instance;
+        _instance = instance;
         Reference = reference;
-        this._implDefinition = implDefinition;
-        this._componentContainer = componentContainer;
+        _implDefinition = implDefinition;
+        _componentContainer = componentContainer;
 
         _orbitClient = componentContainer.Inject<OrbitClient>();
         _clock = componentContainer.Inject<Clock>();
-        _supervisorScope = componentContainer.Inject<SupervisorScope>();
         _invocationSystem = componentContainer.Inject<InvocationSystem>();
 
 
         _createdTime = _clock.Value.CurrentTime;
 
         _lastActivityAtomic = new AtomicReference<long>(_createdTime);
-        _channel = Channel.CreateUnbounded<EventType>(); //addressableBufferCount;
+        _channel = new BlockingCollection<EventType>(); //addressableBufferCount;
 
 
         if (instance is AbstractAddressable inst)
@@ -60,7 +63,8 @@ public class ExecutionHandle : IDeactivatable
         }
 
         _tokenSource = new CancellationTokenSource();
-        Task.Run(async () => await Worker(), _tokenSource.Token);
+        ;
+        Task.Run(async () => await Worker());
     }
 
     public bool DeactivateNextTick => _deactivateNextTick;
@@ -90,12 +94,11 @@ public class ExecutionHandle : IDeactivatable
         return await completion.Task;
     }
 
-    private async void SendEvent(EventType eventType)
+    private void SendEvent(EventType eventType)
     {
-        var writer = _channel.Writer;
         try
         {
-            await writer.WriteAsync(eventType);
+            _channel.Add(eventType);
         }
         catch (Exception e)
         {
@@ -124,6 +127,7 @@ public class ExecutionHandle : IDeactivatable
             }
         }
         var elapsed = stopwatch.Elapsed;
+        var key = Reference.ToString();
         _logger.LogDebug($"Activated {Reference} in {elapsed}ms.");
         Active = true;
     }
@@ -162,7 +166,10 @@ public class ExecutionHandle : IDeactivatable
 
                 if (hasReason)
                 {
-                    reasonArgs = new object[] { deactivationReason };
+                    reasonArgs = new object[]
+                    {
+                        deactivationReason
+                    };
                 }
 
 
@@ -184,7 +191,7 @@ public class ExecutionHandle : IDeactivatable
             }
 
             _tokenSource.Cancel();
-            DrainChannel();
+            await DrainChannel();
         }
         var elapsed = stopwatch.Elapsed;
         _logger.LogDebug($"Deactivated {Reference} in {elapsed}ms.");
@@ -193,9 +200,10 @@ public class ExecutionHandle : IDeactivatable
 
     private async Task DrainChannel()
     {
-        await foreach (var ent in _channel.Reader.ReadAllAsync())
+        foreach (var ent in _channel)
         {
-            if (ent is InvokeEvent e)
+            //todo
+            if (ent is InvokeEvent e && e.Invocation.Reason == InvocationReason.Invocation)
             {
                 _logger.LogWarning(
                     $"Received invocation which can no longer be handled locally. Rerouting... {e.Invocation}");
@@ -208,16 +216,18 @@ public class ExecutionHandle : IDeactivatable
     //todo 
     private async Task Worker()
     {
-        await foreach (var ent in _channel.Reader.ReadAllAsync())
+        _logger.LogDebug("Start Worker");
+        foreach (var ent in _channel.GetConsumingEnumerable())
         {
             try
             {
-                object result = null;
+                object? result = null;
                 switch (ent)
                 {
                     case ActivateEvent activateEvent:
-                        _logger.LogDebug($"ActivateEvent {activateEvent}");
+                        _logger.LogDebug($"ActivateEvent Start {activateEvent}");
                         await OnActivate();
+                        _logger.LogDebug($"ActivateEvent End {activateEvent}");
                         break;
                     case InvokeEvent invokeEvent:
                         _logger.LogDebug($"InvokeEvent {invokeEvent.Invocation}");
@@ -236,7 +246,14 @@ public class ExecutionHandle : IDeactivatable
             {
                 ent.Completion.SetException(ex);
             }
+
+            if (_tokenSource.IsCancellationRequested)
+            {
+                break;
+            }
         }
+
+        _logger.LogDebug("End Worker");
     }
 
     public abstract class EventType

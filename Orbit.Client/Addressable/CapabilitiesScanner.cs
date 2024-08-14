@@ -15,8 +15,8 @@ public class CapabilitiesScanner
 
     public CapabilitiesScanner(Clock clock, OrbitClientConfig config, ILoggerFactory loggerFactory)
     {
-        this._clock = clock;
-        this._config = config;
+        _clock = clock;
+        _config = config;
         _packagePaths = config.Packages.ToList();
         _logger = loggerFactory.CreateLogger<CapabilitiesScanner>();
     }

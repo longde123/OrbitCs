@@ -27,7 +27,7 @@ public class TestClient
 
     public TestClient(Action<Message> onReceive)
     {
-        this._onReceive = onReceive;
+        _onReceive = onReceive;
     }
 
     public NodeId NodeId { get; private set; } = NodeId.Generate("test");
@@ -56,7 +56,13 @@ public class TestClient
 
         var response = await _nodeChannel.JoinClusterAsync(new JoinClusterRequestProto
         {
-            Capabilities = new CapabilitiesProto { AddressableTypes = { "test" } }
+            Capabilities = new CapabilitiesProto
+            {
+                AddressableTypes =
+                {
+                    "test"
+                }
+            }
         });
         NodeId = response.Info.Id.ToNodeId();
         _challengeToken = response.Info.Lease.ChallengeToken;
@@ -131,7 +137,13 @@ public class TestClient
     {
         var response = await _nodeChannel.RenewLeaseAsync(new RenewNodeLeaseRequestProto
         {
-            Capabilities = new CapabilitiesProto { AddressableTypes = { "test" } },
+            Capabilities = new CapabilitiesProto
+            {
+                AddressableTypes =
+                {
+                    "test"
+                }
+            },
             ChallengeToken = _challengeToken
         });
 

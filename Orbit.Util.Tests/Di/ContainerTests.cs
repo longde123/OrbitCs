@@ -104,7 +104,7 @@ public class ContainerTests
 
         public void SetPrefix(string prefix)
         {
-            this._prefix = prefix;
+            _prefix = prefix;
         }
 
         public string Message(string msg)
@@ -120,7 +120,7 @@ public class ContainerTests
 
         public TestClassWithDependencies(TestClass dependency)
         {
-            this._dependency = dependency;
+            _dependency = dependency;
         }
 
         public string Message(string msg)

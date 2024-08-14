@@ -101,6 +101,11 @@ public class Timestamp : IEquatable<Timestamp>, IComparable<Timestamp>
         var millis = (long)(dateTime - new DateTime(1970, 1, 1)).TotalMilliseconds;
         return new Timestamp(millis / 1000, (int)(millis % 1000 * 1000000));
     }
+
+    public override string ToString()
+    {
+        return ToDateTime().ToUniversalTime().ToString();
+    }
 }
 
 public static class TimestampExtensions

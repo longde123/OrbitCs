@@ -53,7 +53,10 @@ public class ActorBenchmarks
         {
             GrpcEndpoint = _targetUri,
             Namespace = _nameSpace,
-            Packages = new List<string> { "Orbit.Benchmark" }
+            Packages = new List<string>
+            {
+                "Orbit.Benchmark"
+            }
         };
 
         _server = new OrbitServer(serverConfig);

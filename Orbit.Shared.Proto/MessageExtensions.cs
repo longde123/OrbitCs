@@ -96,6 +96,7 @@ public static class MessageExtensions
             };
         }
 
+
         if (messageContentProto.InvocationResponseError != null)
         {
             return new MessageContent.InvocationResponseError

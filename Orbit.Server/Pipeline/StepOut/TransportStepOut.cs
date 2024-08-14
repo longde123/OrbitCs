@@ -3,18 +3,18 @@ using Orbit.Shared.Net;
 
 namespace Orbit.Server.Pipeline.Step;
 
-public class TransportStep : PipelineStep
+public class TransportStepOut : PipelineStepOut
 {
     private readonly ConnectionManager _connectionManager;
     private readonly RemoteMeshNodeManager _remoteMeshNodeManager;
 
-    public TransportStep(ConnectionManager connectionManager, RemoteMeshNodeManager remoteMeshNodeManager)
+    public TransportStepOut(ConnectionManager connectionManager, RemoteMeshNodeManager remoteMeshNodeManager)
     {
-        this._connectionManager = connectionManager;
-        this._remoteMeshNodeManager = remoteMeshNodeManager;
+        _connectionManager = connectionManager;
+        _remoteMeshNodeManager = remoteMeshNodeManager;
     }
 
-    public override async Task OnOutbound(PipelineContext context, Message msg)
+    public override async Task<bool> OnOutbound(PipelineContext context, Message msg)
     {
         var targetNode = msg.Target switch
         {
@@ -40,5 +40,6 @@ public class TransportStep : PipelineStep
         }
 
         await client?.SendMessage(msg);
+        return true;
     }
 }

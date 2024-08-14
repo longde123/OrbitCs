@@ -11,6 +11,8 @@
       &lt;TestId&gt;NUnit3x::0E4F06DB-AA14-4915-A586-D59621E866A7::net7.0::Orbit.Client.Test.LifecycleTests.ConnectingAClientAddsItToTheServerCluster&lt;/TestId&gt;&#xD;
     &lt;/TestAncestor&gt;&#xD;
     &lt;ProjectFile&gt;AD34B1E9-1C18-49F5-8885-DE53BD555195/d:Misc/f:HighResolutionTickerTest.cs&lt;/ProjectFile&gt;&#xD;
+    &lt;ProjectFile&gt;0E4F06DB-AA14-4915-A586-D59621E866A7/f:ActorSubjectTest.cs&lt;/ProjectFile&gt;&#xD;
+    &lt;ProjectFile&gt;0E4F06DB-AA14-4915-A586-D59621E866A7/f:DeactivationTests.cs&lt;/ProjectFile&gt;&#xD;
   &lt;/Or&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	

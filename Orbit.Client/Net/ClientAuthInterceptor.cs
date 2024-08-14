@@ -16,7 +16,7 @@ public class ClientAuthInterceptor : Interceptor
     public ClientAuthInterceptor(LocalNode localNode, ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<ClientAuthInterceptor>();
-        this._localNode = localNode;
+        _localNode = localNode;
     }
 
 

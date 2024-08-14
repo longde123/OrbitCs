@@ -52,7 +52,7 @@ public abstract class Key
     {
         public StringKey(string key)
         {
-            this.Key = key;
+            Key = key;
         }
 
         public string Key { get; set; }
@@ -87,7 +87,7 @@ public abstract class Key
     {
         public Int32Key(int key)
         {
-            this.Key = key;
+            Key = key;
         }
 
         public int Key { get; set; }
@@ -122,7 +122,7 @@ public abstract class Key
     {
         public Int64Key(long key)
         {
-            this.Key = key;
+            Key = key;
         }
 
         public long Key { get; set; }

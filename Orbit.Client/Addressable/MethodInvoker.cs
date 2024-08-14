@@ -16,7 +16,10 @@ internal static class MethodInvoker
         var argumentTypes = args.Select(arg => arg.Item2).ToArray();
 
         var method = MatchMethod(instance.GetType(), methodName, argumentTypes) ??
-                     MatchMethod(instance.GetType(), methodName, argumentTypes.Concat(new[] { typeof(Task) }).ToArray())
+                     MatchMethod(instance.GetType(), methodName, argumentTypes.Concat(new[]
+                     {
+                         typeof(Task)
+                     }).ToArray())
                      ?? throw new NoSuchMethodException(
                          $"{methodName}({string.Join(", ", argumentTypes.Select(t => t.Name))})");
 

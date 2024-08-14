@@ -15,8 +15,8 @@ public class Router
 
     public Router(LocalNodeInfo localNode, ClusterManager clusterManager)
     {
-        this._localNode = localNode;
-        this._clusterManager = clusterManager;
+        _localNode = localNode;
+        _clusterManager = clusterManager;
     }
 
     public virtual Route FindRoute(NodeId targetNode, Route possibleRoute = null)

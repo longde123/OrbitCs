@@ -11,5 +11,5 @@ public class LeaseDuration
 
     public TimeSpan ExpiresIn => TimeSpan.FromSeconds(Duration);
 
-    public TimeSpan RenewIn => TimeSpan.FromSeconds(Duration / 2);
+    public TimeSpan RenewIn => TimeSpan.FromSeconds(Duration / 2f);
 }

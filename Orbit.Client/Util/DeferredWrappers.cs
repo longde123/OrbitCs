@@ -28,7 +28,7 @@ internal static class DeferredWrappers
 
         // 处理 Task 和 Task<> 异步方法调用
         if (returnType == typeof(Task) ||
-            (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>)))
+            returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
         {
             // 调用方法并返回 Task 类型
             var task = (Task)method.Invoke(target, args);

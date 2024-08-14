@@ -3,7 +3,7 @@ using Orbit.Client.Addressable;
 namespace Orbit.Client.Actor;
 
 [NonConcrete]
-public interface IActor : Addressable.IAddressable
+public interface IActor : IAddressable
 {
 }
 

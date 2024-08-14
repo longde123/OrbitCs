@@ -41,6 +41,11 @@ public class Clock
     {
         return time - Now();
     }
+
+    public override string ToString()
+    {
+        return Now().ToUniversalTime().ToString();
+    }
 }
 
 public static class ClockUtils

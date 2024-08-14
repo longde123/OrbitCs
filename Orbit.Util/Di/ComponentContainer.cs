@@ -106,7 +106,7 @@ public class ComponentContainerRoot
 
     public ComponentContainerRoot(ComponentContainer container)
     {
-        this._container = container;
+        _container = container;
     }
 
     public void Register<T>(Func<ComponentContainer, T> body)

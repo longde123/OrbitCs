@@ -8,9 +8,9 @@ using Orbit.Shared.Net;
 
 namespace Orbit.Server.Pipeline.Step;
 
-public class EchoStep : PipelineStep
+public class EchoStepIn : PipelineStepIn
 {
-    public override async Task OnInbound(PipelineContext context, Message msg)
+    public override async Task<bool> OnInbound(PipelineContext context, Message msg)
     {
         if (msg.Source != null)
         {
@@ -18,9 +18,10 @@ public class EchoStep : PipelineStep
 
             msg.Target = new MessageTarget.Unicast(source);
 
-            //todo
-            var newMessage = msg;
-            context.PushNew(newMessage);
+
+            return false;
         }
+
+        return true;
     }
 }

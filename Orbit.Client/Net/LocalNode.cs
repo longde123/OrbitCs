@@ -18,7 +18,7 @@ public class LocalNode
 
     public LocalNode(OrbitClientConfig config)
     {
-        this._config = config;
+        _config = config;
         _defaultNodeData = new NodeData(config.GrpcEndpoint, config.Namespace);
         _refNodeData = new AtomicReference<NodeData>(_defaultNodeData);
     }

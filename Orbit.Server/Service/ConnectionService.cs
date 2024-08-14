@@ -1,5 +1,4 @@
 using Grpc.Core;
-using Orbit.Server.Concurrent;
 using Orbit.Server.Net;
 using Orbit.Shared.Mesh;
 using Orbit.Shared.Proto;
@@ -10,9 +9,9 @@ public class ConnectionService : Connection.ConnectionBase
 {
     private readonly ConnectionManager _connectionManager;
 
-    public ConnectionService(ConnectionManager connectionManager, RuntimeScopes runtimeScopes)
+    public ConnectionService(ConnectionManager connectionManager)
     {
-        this._connectionManager = connectionManager;
+        _connectionManager = connectionManager;
     }
 
 

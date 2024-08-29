@@ -13,31 +13,29 @@ public class AddressableProxy<T> : DispatchProxy
 
     private AddressableReference _reference;
 
-    private bool _actorReference;
+
 
     // but calls its Invoke method whenever an API is used).
-    public static T Decorate(AddressableReference reference, InvocationSystem invocationSystem, bool actorReference)
+    public static T Decorate(AddressableReference reference, InvocationSystem invocationSystem)
     {
         // DispatchProxy.Create creates proxy objects
         var proxy = Create<T, AddressableProxy<T>>()
             as AddressableProxy<T>;
-        proxy.SetAddressableProxy(reference, invocationSystem, actorReference);
+        proxy.SetAddressableProxy(reference, invocationSystem);
 
         return proxy as T;
     }
 
-    public void SetAddressableProxy(AddressableReference reference, InvocationSystem invocationSystem, bool actorReference)
+    public void SetAddressableProxy(AddressableReference reference, InvocationSystem invocationSystem)
     {
         _reference = reference;
         _invocationSystem = invocationSystem;
-        _actorReference = actorReference;
     }
 
 
     protected override object? Invoke(MethodInfo? method, object?[]? args)
     {
-        var isSubscribe = _actorReference && method.IsDefined(typeof(OneWay), false);
-        var isUnSubscribe = _actorReference && method.IsDefined(typeof(UnOneWay), false);
+   
         var mappedArgsWithType =
             args.Select((value, index) => { return Tuple.Create(value, method.GetParameters()[index].ParameterType); })
                 .ToList();
@@ -50,20 +48,9 @@ public class AddressableProxy<T> : DispatchProxy
         };
 
         var completion = new Completion();
-        if (isSubscribe)
-        {
-            invocation.Reason = InvocationReason.Subscribe;
-            _invocationSystem.SendSubscribe(invocation, completion);
-        }
-        else if (isUnSubscribe)
-        {
-            invocation.Reason = InvocationReason.UnSubscribe;
-            _invocationSystem.SendUnSubscribe(invocation, completion);
-        }
-        else
-        {
+      
             _invocationSystem.SendInvocation(invocation, completion);
-        }
+      
 
 
         if (method.ReturnType.IsGenericType)
@@ -86,9 +73,9 @@ public class AddressableProxyFactory
         _invocationSystem = invocationSystem;
     }
 
-    public T CreateProxy<T>(Type interfaceClass, Key key, bool actorReference) where T : class, IAddressable
+    public T CreateProxy<T>(Type interfaceClass, Key key) where T : class, IAddressable
     {
-        return AddressableProxy<T>.Decorate(new AddressableReference(interfaceClass.FullName, key), _invocationSystem, actorReference);
+        return AddressableProxy<T>.Decorate(new AddressableReference(interfaceClass.FullName, key), _invocationSystem);
     }
 }
 

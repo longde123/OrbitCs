@@ -39,7 +39,7 @@ public class ClientConnection : IMessageSender
                 try
                 {
                     var mp = message.ToMessageProto();
-                    outgoingChannel.WriteAsync(mp);
+                    _outgoingChannel.WriteAsync(mp);
                 }
                 catch (Exception e)
                 {

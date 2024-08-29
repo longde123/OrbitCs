@@ -13,8 +13,7 @@ namespace Orbit.Client.Net;
 
 public class MessageHandler
 {
-    private readonly ConcurrentDictionary<long, ResponseEntry> _awaitingResponse;
-    private readonly ConcurrentDictionary<long, Completion> _awaitingSubject;
+    private readonly ConcurrentDictionary<long, ResponseEntry> _awaitingResponse; 
     private readonly Clock _clock;
     private readonly OrbitClientConfig _config;
     private readonly ConnectionHandler _connectionHandler;
@@ -31,8 +30,7 @@ public class MessageHandler
         InvocationSystem invocationSystem,
         ILoggerFactory loggerFactory)
     {
-        _awaitingResponse = new ConcurrentDictionary<long, ResponseEntry>();
-        _awaitingSubject = new ConcurrentDictionary<long, Completion>();
+        _awaitingResponse = new ConcurrentDictionary<long, ResponseEntry>(); 
         _messageCounter = new AtomicReference<long>(0);
         _clock = clock;
         _config = config;
@@ -88,17 +86,7 @@ public class MessageHandler
                 {
                     await _invocationSystem.OnInvocationRequest(message);
                 }
-
-                if (content.Reason == InvocationReason.Subscribe)
-                {
-                    await _invocationSystem.OnReactiveSubscribeRequest(message);
-                }
-
-                if (content.Reason == InvocationReason.UnSubscribe)
-                {
-                    await _invocationSystem.OnReactiveUnSubscribeRequest(message);
-                }
-
+ 
                 break;
         }
     }
@@ -166,11 +154,7 @@ public class MessageHandler
             _awaitingResponse.Remove(messageId, out _);
             return c.Completion;
         }
-
-        if (_awaitingSubject.TryGetValue(messageId, out var cc))
-        {
-            return cc;
-        }
+ 
 
         _logger.LogWarning("Response for unknown message " + messageId + " received. Did it time out? (> " +
                            MessageTimeoutMs + "ms).");
@@ -185,14 +169,5 @@ public class MessageHandler
         public Message Msg;
         public TimeMs TimeAdded;
     }
-
-    public void UnSubscribe(long key)
-    {
-        _awaitingSubject.Remove(key, out _);
-    }
-
-    public void Subscribe(long key, Completion c)
-    {
-        _awaitingSubject.TryAdd(key, c);
-    }
+ 
 }

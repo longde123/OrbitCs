@@ -25,8 +25,6 @@ public partial class InvocationSystem
     private readonly Serializer.Serializer _serializer;
 
 
-    private readonly ConcurrentDictionary<long, object> _awaitingSubscribe;
-
     public InvocationSystem(Serializer.Serializer serializer, ExecutionSystem executionSystem, LocalNode localNode,
         OrbitClientConfig config, ComponentContainer componentContainer, ILoggerFactory loggerFactory)
     {
@@ -36,8 +34,7 @@ public partial class InvocationSystem
         _localNode = localNode;
         _config = config;
         _messageHandler = componentContainer.Inject<MessageHandler>();
-        _awaitingSubscription = new ConcurrentDictionary<long, object>(); //server remove
-        _awaitingSubscribe = new ConcurrentDictionary<long, object>(); //client add
+        
     }
 
     public async Task OnInvocationRequest(Message msg)

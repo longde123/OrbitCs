@@ -31,10 +31,7 @@ public class Message
 public enum InvocationReason
 {
     Invocation = 0,
-
-    Rerouted = 1,
-    Subscribe = 2,
-    UnSubscribe = 3
+    Rerouted = 1
 }
 
 public static class InvocationReasonExtensions

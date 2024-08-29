@@ -9,7 +9,7 @@ public class ActorSubjectTest : BaseIntegrationTest
     [Test]
     public async Task TestBasicActorSubjectRequestResponse()
     {
-        var actor = Client.ActorFactory.CreateProxyReference<ITestActorSubject>("test");
+        var actor = Client.ActorFactory.CreateReference<ITestActorSubject>("test");
         var observer = new AsyncSubscribe<string>((s) => { Console.WriteLine(s); }, (err) => { Console.WriteLine(err); });
         await actor.Subscribe(observer);
         await actor.OnNext("test");
